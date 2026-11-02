@@ -5,6 +5,7 @@ import com.pettown.common.exception.ErrorCodeEnum;
 import com.pettown.business.pet.entity.Pet;
 import com.pettown.business.pet.mapper.PetMapper;
 import com.pettown.business.pet.service.PetService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
@@ -18,17 +19,19 @@ public class PetServiceImpl implements PetService {
 
     @Override
     public Pet createPet(String name, String species) {
-        return petMapper.insert(name.trim(), species.trim());
+        Pet pet = new Pet(null, name.trim(), species.trim());
+        petMapper.insert(pet);
+        return pet;
     }
 
     @Override
     public Pet getPet(Long id) {
-        return petMapper.findById(id)
+        return petMapper.selectByIdOpt(id)
                 .orElseThrow(() -> new BusinessException(ErrorCodeEnum.NOT_FOUND, "宠物不存在"));
     }
 
     @Override
     public List<Pet> listPets() {
-        return petMapper.findAll();
+        return petMapper.selectList(new LambdaQueryWrapper<Pet>().orderByAsc(Pet::getId));
     }
 }

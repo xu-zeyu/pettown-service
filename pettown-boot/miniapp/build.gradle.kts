@@ -16,6 +16,7 @@ dependencies {
     testImplementation(project(":module-business"))
     testImplementation(project(":common-security"))
     testImplementation("org.springframework.security:spring-security-crypto")
+    testRuntimeOnly(libs.h2)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

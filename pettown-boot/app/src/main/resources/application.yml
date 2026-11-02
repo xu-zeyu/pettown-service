@@ -3,8 +3,6 @@ spring:
     name: pettown-app
   config:
     import: optional:file:${PETTOWN_ENV_FILE:./.env}[.properties]
-  autoconfigure:
-    exclude: ${PETTOWN_AUTOCONFIG_EXCLUDES:org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration}
   datasource:
     driver-class-name: ${DB_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
     url: ${DB_URL:}
@@ -22,3 +20,8 @@ pettown:
 
 server:
   port: ${SERVER_PORT:8080}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false

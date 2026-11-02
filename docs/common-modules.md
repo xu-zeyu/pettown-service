@@ -4,7 +4,7 @@
 
 | 模块 | 已提供能力 | 接入条件 |
 | --- | --- | --- |
-| `common-mybatis` | MyBatis Plus 分页插件、自动填充、基础实体、分页结果 | 三个 Boot 工程均已依赖该模块；启用 JDBC 自动配置并提供数据库连接后使用。 |
+| `common-mybatis` | MyBatis-Plus 分页、排序、Join、`BaseMapperX` CRUD/批量操作、自动填充、基础实体与分页结果 | 三个 Boot 工程均已依赖；App 与小程序须配置数据库连接并先执行建表脚本。 |
 | `common-redis` | `RedisCache` 字符串缓存、Redisson 客户端 | 三个 Boot 工程均已依赖该模块；通过各自 `.env` 配置 Redis，按需启用 Redisson。 |
 | `common-security` | Sa-Token 的 `user`、`admin` 独立账号空间及未登录异常响应 | 使用方依赖该模块；业务登录接口负责校验账号后发 Token。当前模块只包含 Sa-Token 核心，尚未装配 HTTP Token 解析。 |
 | `common-file` | `FileService` 的阿里云 OSS 上传下载实现 | 使用方依赖该模块，设置 `pettown.file.enabled=true` 及 `aliyun.oss.endpoint`、`access-key-id`、`access-key-secret`、`bucket-name`、`region`。密钥通过环境变量或部署配置传入。 |
@@ -13,20 +13,39 @@
 验证所有公共模块编译及启动测试：
 
 ```bash
-./gradlew --offline :common-mybatis:compileJava :common-redis:compileJava \
-  :common-security:compileJava :common-file:compileJava :common-log:compileJava \
-  :pettown-boot:app:test :pettown-boot:admin:bootJar :pettown-boot:miniapp:bootJar
+./gradlew build
 ```
 
-当前宠物示例仍使用内存 Mapper；MyBatis 模块尚未替换它。OSS 和认证仍需要真实服务、账号配置与业务登录流程。
+宠物与用户 Mapper 已统一继承 `BaseMapperX`，由 MyBatis-Plus 代理执行数据库操作。宠物数据保存至 `pet`，用户账号保存至 `user_account`。新库先执行 [`sql/persistence.sql`](sql/persistence.sql)，脚本不由应用自动执行。OSS 仍需配置真实服务与账号。
+
+## common-mybatis 与参考模块对齐
+
+参考 `ai-commerce-start/ai-commerce-starter-mybatis`，保留相同的类名、相对包结构及核心接口，包名前缀改为 `com.pettown.common.mybatis`：
+
+| 类 | 能力 |
+| --- | --- |
+| `PageParam`、`SortablePageParam`、`SortingField` | 默认第 1 页、每页 10 条，最大 1000 条；`size=-1` 查询全部；支持驼峰字段转下划线排序。 |
+| `PageResult` | `list`、`total`、空结果工厂；额外保留 `from(IPage)` 转换。 |
+| `mapper.BaseMapperX` | 继承 `MPJBaseMapper`，提供分页/Join 分页、可选结果、条件查询/计数/删除及批量插入更新。 |
+| `utils.MyBatisUtils` | 构建分页、插入拦截器、解析表名和构造列对象。 |
+| `model.BaseEntity`、`config.MyMetaObjectHandler` | 插入填充 `createdTime`、`updatedTime`，更新刷新 `updatedTime`。 |
+| `config.MybatisPlusConfig` | MySQL 分页插件，随 Spring 配置装配。 |
+
+MyBatis-Plus 固定为 `3.5.15`，Join 固定为参考项目的 `1.5.5`。本项目使用 Spring Boot 3，因此使用官方对应的 `mybatis-plus-spring-boot3-starter`；版本集中维护于 `gradle/libs.versions.toml`，避免混入 Boot 2 starter。
+
+相对参考实现的修正：`size=-1` 可通过参数校验并返回真实总数、保留排序；排序参数校验字段格式与升降序；Optional 查询只把缺失记录转为空值，数据库异常继续抛出；首条查询在数据库限制为 1 条；更新已有时间的实体时也刷新更新时间。原 `pagination.PageParam/PageResult` 已移至根包，与参考模块一致。
+
+宠物实体继承 `BaseEntity`；用户实体映射已有账号表的 `id/phone/password_hash`，不强制增加时间列，保留字符串 ID 和账号数据兼容性。用户 ID 在 Service 生成，并以 `IdType.INPUT` 写入；宠物 ID 使用数据库自增。
+
+[MyBatis-Plus 官方安装说明](https://baomidou.com/getting-started/install/)与[分页插件说明](https://baomidou.com/plugins/pagination/)分别说明 Boot 3 starter 和独立 `mybatis-plus-jsqlparser` 依赖。
 
 ## 各环境连接配置
 
 三个 Boot 工程使用 `${变量名:默认值}` 从各自的 `.env` 读取配置。将目标工程的 `.env.example` 复制为同目录 `.env`，填写端口和需要的连接参数。`.env` 不进入 Git，也不会被打包进 JAR。`bootRun` 固定使用对应工程目录作为工作目录；部署时应从该服务的部署目录启动 JAR。系统环境变量的优先级高于 `.env`，可用于临时覆盖。文件采用 Java properties 兼容的 `KEY=value` 语法。完整步骤见 [启动说明](run.md)。
 
 ```bash
-cp -n pettown-boot/app/.env pettown-boot/app/.env
+cp -n pettown-boot/app/.env.example pettown-boot/app/.env
 ./gradlew :pettown-boot:app:bootRun
 ```
 
-启用数据库时，在对应 `.env` 中设置 `PETTOWN_AUTOCONFIG_EXCLUDES=` 并填写有效连接；启用 Redisson 时设置 `PETTOWN_REDIS_ENABLED=true`。旧的 `pettown-boot/config/connection-secrets.yml` 不再被读取，迁移时请将其中的连接信息填入相应服务的 `.env`。宠物示例尚未向源项目现有库写入数据。
+App 与小程序在对应 `.env` 填写有效数据库连接即可。Admin 暂无业务 Mapper，默认关闭数据源自动配置，需要接入数据库时再设置 `PETTOWN_AUTOCONFIG_EXCLUDES=`。启用 Redisson 时设置 `PETTOWN_REDIS_ENABLED=true`。旧的 `pettown-boot/config/connection-secrets.yml` 不再被读取，迁移时请将其中的连接信息填入相应服务的 `.env`。应用只连接各自配置的数据库，不自动访问参考项目数据库。

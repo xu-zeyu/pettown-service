@@ -26,7 +26,7 @@
 | --- | --- |
 | `common-core` | 公共核心；`constant` 公共常量、`enums` 公共枚举、`exception` 公共异常、`result` 统一结果类型、`util` 通用工具、`validation` 通用校验。 |
 | `common-web` | Web 公共组件；`advice` 全局处理、`config` Web 配置、`filter` 过滤器、`interceptor` 拦截器、`response` 响应处理。 |
-| `common-mybatis` | MyBatis 公共组件；`config` 配置、`handler` 类型处理、`interceptor` 插件、`pagination` 分页。 |
+| `common-mybatis` | MyBatis-Plus 公共组件；根包分页与排序参数、`config` 分页插件与自动填充、`mapper/BaseMapperX` 通用 CRUD 和 Join、`model/BaseEntity` 时间字段、`utils/MyBatisUtils` 查询工具。 |
 | `common-redis` | Redis 公共组件；`config` 配置、`util` Redis 工具。 |
 | `common-security` | 安全认证公共组件；`config` 配置、`annotation` 注解、`filter` 安全过滤器、`handler` 安全处理。 |
 | `common-file` | 文件管理公共组件；`config` 配置、`service` 文件服务、`properties` 配置属性。 |
@@ -50,7 +50,7 @@
 | `module-business/src/main/java/com/pettown/business/pet/entity` | 宠物实体，不包含客户端响应格式。 |
 | `module-business/src/main/java/com/pettown/business/pet/service` | 宠物业务接口。 |
 | `module-business/src/main/java/com/pettown/business/pet/service/impl` | 业务实现，调用 Mapper。 |
-| `module-business/src/main/java/com/pettown/business/pet/mapper` | 数据访问接口及当前的内存实现。 |
+| `module-business/src/main/java/com/pettown/business/pet/mapper` | 继承 `BaseMapperX` 的 MyBatis-Plus 数据访问接口。 |
 | `module-app/src/main/java/com/pettown/app/pet/controller` | App 请求入口，调用共享 Service。 |
 | `module-app/src/main/java/com/pettown/app/pet/dto` | App 请求参数。 |
 | `module-app/src/main/java/com/pettown/app/pet/vo` | App 响应对象，负责将业务实体映射为接口响应。 |
@@ -59,13 +59,13 @@
 
 ## Boot 模块
 
-`pettown-boot/app`、`pettown-boot/admin`、`pettown-boot/miniapp` 是三个独立可运行的 Gradle 子工程。每个工程只依赖自己的客户端模块，启动类扫描自己的客户端包、实际使用的共享业务包和公共包；每个工程各有一份 `application.yml`、一个 `.env.example` 和日志配置。App 工程还包含宠物接口装配测试。运行与部署方式见 [启动说明](run.md)。
+`pettown-boot/app`、`pettown-boot/admin`、`pettown-boot/miniapp` 是三个独立可运行的 Gradle 子工程。每个工程只依赖自己的客户端模块，启动类扫描自己的客户端包、实际使用的共享业务包和公共包；每个工程各有一份 `application.yml`、一个 `.env.example` 和日志配置。App 和小程序工程包含基于独立 H2 数据库的接口装配测试。App 只扫描宠物 Mapper，小程序只扫描用户 Mapper，避免装配其他客户端未使用的业务。运行与部署方式见 [启动说明](run.md)。
 
 ## 依赖方向
 
 - 父工程统一配置，不承载业务代码。
 - `pettown-common` 只提供基础能力，不依赖业务模块或 Boot 模块。
-- `module-business` 按需依赖公共模块，不依赖 App、小程序或管理后台模块。宠物业务使用 `common-core` 和 Spring Context；用户业务通过 Spring JDBC 持久化账号并使用 BCrypt 保存密码哈希。
+- `module-business` 按需依赖公共模块，不依赖 App、小程序或管理后台模块。宠物与用户业务统一通过 `common-mybatis` 的 `BaseMapperX` 持久化，禁止在业务代码中使用 `JdbcTemplate` 或手写 JDBC；用户密码使用 BCrypt 保存哈希。
 - 客户端项目模块按需依赖 `module-business` 与公共模块。`module-app` 使用共享宠物业务、`common-core`、`common-web` 和 `common-log`；`module-miniapp` 使用共享用户业务、`common-web` 和 `common-security`；`module-admin` 暂无业务实现。客户端模块之间没有 Gradle 依赖。
 - 三个 Boot 子工程分别依赖自己的客户端模块及 `common-mybatis`、`common-redis`、`common-log`，负责最终装配；共享业务模块经客户端模块进入运行时。数据库和 Redis 的连接参数由各自 `.env` 提供，启用数据库自动配置与 Redisson 时须有可用服务。其他模块不得依赖 Boot。
 - 所有依赖保持单向，禁止循环依赖。

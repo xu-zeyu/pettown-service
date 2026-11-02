@@ -12,7 +12,7 @@
 
 在 IntelliJ IDEA 中直接运行启动类时，默认工作目录通常是仓库根目录。启动入口会在这种情况下定位到 `pettown-boot/<服务>/.env`；若显式设置 `PETTOWN_ENV_FILE`，则使用指定文件。打包后从独立部署目录运行时，默认读取该目录的 `.env`。
 
-`application.yml` 内提供配置键与默认值，优先读取同目录 `.env` 中的 `SERVER_PORT`、`DB_*`、`REDIS_*` 等值。默认禁用 JDBC 自动配置，默认不创建 Redisson 客户端。接入数据库时，在 `.env` 写入 `PETTOWN_AUTOCONFIG_EXCLUDES=`（空值）并填写有效的 `DB_URL`、用户名和密码；需要 Redisson 时设置 `PETTOWN_REDIS_ENABLED=true` 并填写有效的 Redis 连接信息。
+`application.yml` 内提供配置键与默认值，优先读取同目录 `.env` 中的 `SERVER_PORT`、`DB_*`、`REDIS_*` 等值。App 和小程序通过 MyBatis-Plus 持久化数据，启动前须填写有效的 `DB_URL`、`DB_USERNAME`、`DB_PASSWORD`，并在新数据库执行 [`sql/persistence.sql`](sql/persistence.sql)。已有账号表的 `id` 须为可容纳 31 字符的字符串列；建表脚本不会迁移旧表。Admin 暂无数据库业务，默认关闭数据源自动配置，接入数据库时再设置 `PETTOWN_AUTOCONFIG_EXCLUDES=`（空值）。Redisson 默认不创建，需要时设置 `PETTOWN_REDIS_ENABLED=true` 并填写有效的 Redis 连接信息。
 
 部署时，分别把构建产物 `pettown-boot/<服务>/build/libs/*.jar` 放到该服务的部署目录，并在 **JAR 的启动工作目录** 放置 `.env`：
 

@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":common-redis"))
     runtimeOnly("com.mysql:mysql-connector-j")
     testImplementation(libs.spring.boot.starter.test)
+    testRuntimeOnly(libs.h2)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

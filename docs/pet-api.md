@@ -18,4 +18,4 @@ curl -i -X POST http://localhost:8080/api/pets \
 
 查询详情：`GET /api/pets/{id}`。查询列表：`GET /api/pets`。参数校验失败返回 HTTP 400；宠物不存在返回 HTTP 404，均采用统一响应格式。
 
-当前 `PetMapper` 的实现使用进程内存存储，适合演示调用链；应用重启后数据会清空。接入正式数据库时可替换 `InMemoryPetMapper`，Controller 和 Service 接口无需改变。
+当前 `PetMapper` 继承 `BaseMapperX<Pet>`，通过 MyBatis-Plus 将数据持久化到 `pet` 表，重启后保留。启动前配置 App 数据库连接并执行 [`sql/persistence.sql`](sql/persistence.sql)。实体使用自增 ID，并自动填充创建及更新时间；列表按 ID 升序返回。
