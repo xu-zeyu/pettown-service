@@ -3,8 +3,10 @@ package com.pettown.business.user.service.impl;
 import com.pettown.business.user.entity.User;
 import com.pettown.business.user.mapper.UserMapper;
 import com.pettown.business.user.service.UserAuthService;
+import com.pettown.business.verification.service.VerificationCodeService;
 import com.pettown.common.exception.BusinessException;
 import com.pettown.common.exception.ErrorCodeEnum;
+import com.pettown.common.verificationEnum.VerificationCodeTypeEnum;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -20,10 +22,12 @@ import org.springframework.stereotype.Service;
 public class UserAuthServiceImpl implements UserAuthService {
     private static final SecureRandom RANDOM = new SecureRandom();
     private final UserMapper userMapper;
+    private final VerificationCodeService verificationCodeService;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public UserAuthServiceImpl(UserMapper userMapper) {
+    public UserAuthServiceImpl(UserMapper userMapper, VerificationCodeService verificationCodeService) {
         this.userMapper = userMapper;
+        this.verificationCodeService = verificationCodeService;
     }
 
     @Override
@@ -33,7 +37,8 @@ public class UserAuthServiceImpl implements UserAuthService {
     }
 
     @Override
-    public User loginOrRegister(String phone, String password) {
+    public User loginOrRegister(String phone, String password, String verificationCode) {
+        verificationCodeService.verifyAndConsume(phone, VerificationCodeTypeEnum.LOGIN_REGISTER, verificationCode);
         User existing = userMapper.findByPhone(phone).orElse(null);
         if (existing != null) {
             return verifyPassword(existing, password);

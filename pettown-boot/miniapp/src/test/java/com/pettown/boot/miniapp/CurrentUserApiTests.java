@@ -1,11 +1,13 @@
 package com.pettown.boot.miniapp;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.pettown.business.user.mapper.UserMapper;
+import com.pettown.common.cache.Cache;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -24,10 +27,13 @@ class CurrentUserApiTests {
     @Autowired private TestRestTemplate restTemplate;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private UserMapper userMapper;
+    @MockitoBean private Cache cache;
 
     @BeforeEach
     void setUp() {
         userMapper.delete(new QueryWrapper<>());
+        when(cache.compareAndDelete("pettown:verification-code:login_register:13800138000", "000007"))
+                .thenReturn(true);
     }
 
     @Test
@@ -38,7 +44,7 @@ class CurrentUserApiTests {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         ResponseEntity<String> login = restTemplate.postForEntity("/api/miniapp/auth/login",
-                new HttpEntity<>("{\"phone\":\"13800138000\",\"password\":\"strongPass123\"}", headers),
+                new HttpEntity<>("{\"phone\":\"13800138000\",\"password\":\"strongPass123\",\"verificationCode\":\"000007\"}", headers),
                 String.class);
         assertThat(login.getStatusCode().value()).isEqualTo(200);
         JsonNode loginData = objectMapper.readTree(login.getBody()).path("data");

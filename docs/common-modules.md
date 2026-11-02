@@ -5,7 +5,7 @@
 | 模块 | 已提供能力 | 接入条件 |
 | --- | --- | --- |
 | `common-mybatis` | MyBatis-Plus 分页、排序、Join、`BaseMapperX` CRUD/批量操作、自动填充、基础实体与分页结果 | 三个 Boot 工程均已依赖；App 与小程序须配置数据库连接并先执行建表脚本。 |
-| `common-redis` | `RedisCache` 字符串缓存、Redisson 客户端 | 三个 Boot 工程均已依赖该模块；通过各自 `.env` 配置 Redis，按需启用 Redisson。 |
+| `common-redis` | `CacheUtils` Redisson 缓存、Map 操作，兼容 `RedisCache` 字符串 API | 三个 Boot 工程均已依赖该模块；通过各自 `.env` 配置 Redis。小程序默认启用 Redisson，App/Admin 按需启用。 |
 | `common-security` | Sa-Token 的 `user`、`admin` 独立账号空间及未登录异常响应 | 使用方依赖该模块；业务登录接口负责校验账号后发 Token。当前模块只包含 Sa-Token 核心，尚未装配 HTTP Token 解析。 |
 | `common-file` | `FileService` 的阿里云 OSS 上传下载实现 | 使用方依赖该模块，设置 `pettown.file.enabled=true` 及 `aliyun.oss.endpoint`、`access-key-id`、`access-key-secret`、`bucket-name`、`region`。密钥通过环境变量或部署配置传入。 |
 | `common-log` | `@Log` 操作日志、`X-Trace-Id` 请求追踪、滚动文件日志 | 已由 Boot 与 `module-app` 引用；日志默认写到 `logs/pettown-server.log`。可通过 `logging.file.name` 改路径。 |
@@ -48,4 +48,25 @@ cp -n pettown-boot/app/.env.example pettown-boot/app/.env
 ./gradlew :pettown-boot:app:bootRun
 ```
 
-App 与小程序在对应 `.env` 填写有效数据库连接即可。Admin 暂无业务 Mapper，默认关闭数据源自动配置，需要接入数据库时再设置 `PETTOWN_AUTOCONFIG_EXCLUDES=`。启用 Redisson 时设置 `PETTOWN_REDIS_ENABLED=true`。旧的 `pettown-boot/config/connection-secrets.yml` 不再被读取，迁移时请将其中的连接信息填入相应服务的 `.env`。应用只连接各自配置的数据库，不自动访问参考项目数据库。
+App 与小程序须在对应 `.env` 填写有效数据库连接，小程序还须配置 Redis 以支持验证码。Admin 暂无业务 Mapper，默认关闭数据源自动配置，需要接入数据库时再设置 `PETTOWN_AUTOCONFIG_EXCLUDES=`。小程序的 `PETTOWN_REDIS_ENABLED` 默认 `true`，App/Admin 默认 `false`，需要缓存时设为 `true`。旧的 `pettown-boot/config/connection-secrets.yml` 不再被读取，迁移时请将其中的连接信息填入相应服务的 `.env`。应用只连接各自配置的数据库，不自动访问参考项目数据库。
+
+## Redis 与参考模块对齐
+
+参考 `ai-commerce-start/ai-commerce-starter-cache`，公共缓存接口位于 `common-core` 的 `com.pettown.common.cache.Cache`，Redisson 实现为 `common-redis` 的 `com.pettown.common.redis.CacheUtils`。业务代码可注入 `Cache`，需要 Redis Map 时注入 `CacheUtils`。
+
+| API | 行为 |
+| --- | --- |
+| `setCache(key, value)` | 写入不设过期时间的对象。 |
+| `set(key, value, Duration)` | 写入对象并设置 TTL，以毫秒传递给 Redisson。 |
+| `getCache(key)` | 返回 `Optional<Object>`，不存在时为空。 |
+| `get(key, Class)` | 读取指定类型，不存在时返回 `null`，类型不匹配时抛出异常。 |
+| `getOrElse(key, defaultValue)` | 不存在时返回默认值。 |
+| `delete(key)` | 删除 Key，返回是否删除成功。 |
+| `compareAndDelete(key, expectedValue)` | 扩展的原子匹配删除，用于验证码一次性校验；值不匹配时保留原值。 |
+| `CacheUtils.getMap(key)` | 获取 Redisson `RMap`。 |
+
+`RedissonConfig` 使用与参考模块一致的 `JsonJacksonCodec`，支持对象和字符串缓存。原 `RedisCache.put/get/delete` 保留为兼容入口，统一委托上述实现，不再单独使用 `StringRedisTemplate`。旧的明文字符串缓存与 JSON 编码不同，切换前应让相关旧 Key 失效或重建；新增验证码使用独立 Key 前缀。
+
+验证码消费扩展通过 Redisson `RBucket.compareAndSet(expectedValue, null)` 实现，Redis 在单次脚本中完成比较和删除，避免先读取再删除导致的并发重复使用或误删新验证码。
+
+保留现有 `pettown.redis.enabled` 开关，未启用时其他业务可正常启动；任何实际缓存调用都会明确报错，不回退到内存缓存。未复制参考公共模块中不支持 TTL 的 `DefaultCache`，以保证验证码始终使用 Redis 过期机制。

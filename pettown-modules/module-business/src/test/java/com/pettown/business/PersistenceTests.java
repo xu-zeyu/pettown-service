@@ -15,6 +15,7 @@ import com.pettown.business.user.entity.User;
 import com.pettown.business.user.mapper.UserMapper;
 import com.pettown.business.user.service.UserAuthService;
 import com.pettown.business.user.service.impl.UserAuthServiceImpl;
+import com.pettown.business.verification.service.VerificationCodeService;
 import com.pettown.common.exception.BusinessException;
 import com.pettown.common.mybatis.PageParam;
 import com.pettown.common.mybatis.PageResult;
@@ -33,6 +34,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest(classes = PersistenceTests.TestApplication.class, properties = {
         "spring.datasource.driver-class-name=org.h2.Driver",
@@ -46,6 +48,7 @@ class PersistenceTests {
     @Autowired private PetService petService;
     @Autowired private UserMapper userMapper;
     @Autowired private UserAuthService userAuthService;
+    @MockitoBean private VerificationCodeService verificationCodeService;
 
     @Configuration(proxyBeanMethods = false)
     @EnableAutoConfiguration
@@ -115,13 +118,13 @@ class PersistenceTests {
 
     @Test
     void registersAndAuthenticatesWithStringIdsAndUniquePhones() {
-        User registered = userAuthService.loginOrRegister("13800138000", "strongPass123");
+        User registered = userAuthService.loginOrRegister("13800138000", "strongPass123", "000007");
         assertThat(registered.getId()).matches("pettown[0-9a-f]{24}");
         assertThat(registered.getPasswordHash()).startsWith("$2").isNotEqualTo("strongPass123");
         assertThat(userAuthService.getById(registered.getId()).getPhone()).isEqualTo("13800138000");
-        assertThat(userAuthService.loginOrRegister("13800138000", "strongPass123").getId())
+        assertThat(userAuthService.loginOrRegister("13800138000", "strongPass123", "000007").getId())
                 .isEqualTo(registered.getId());
-        assertThatThrownBy(() -> userAuthService.loginOrRegister("13800138000", "wrongPass123"))
+        assertThatThrownBy(() -> userAuthService.loginOrRegister("13800138000", "wrongPass123", "000007"))
                 .isInstanceOf(BusinessException.class);
         assertThatThrownBy(() -> userMapper.insert(new User("pettown0123456789abcdef01234567",
                 "13800138000", "unused"))).isInstanceOf(DuplicateKeyException.class);

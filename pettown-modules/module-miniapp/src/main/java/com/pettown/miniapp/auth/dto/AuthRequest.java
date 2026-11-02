@@ -7,5 +7,7 @@ public record AuthRequest(
         @NotBlank(message = "手机号不能为空")
         @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式错误") String phone,
         @NotBlank(message = "密码不能为空")
-        @Pattern(regexp = "^[\\x21-\\x7E]{8,72}$", message = "密码须为 8 到 72 位非空格字符") String password) {
+        @Pattern(regexp = "^[\\x21-\\x7E]{8,72}$", message = "密码须为 8 到 72 位非空格字符") String password,
+        @NotBlank(message = "验证码不能为空")
+        @Pattern(regexp = "^[0-9]{6}$", message = "验证码须为 6 位数字") String verificationCode) {
 }

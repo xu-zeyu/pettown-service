@@ -1,4 +1,4 @@
-package com.pettown.miniapp.auth.vo;
+package com.pettown.miniapp.user.vo;
 
 public record UserInfoResponse(String userId, String phone) {
 }

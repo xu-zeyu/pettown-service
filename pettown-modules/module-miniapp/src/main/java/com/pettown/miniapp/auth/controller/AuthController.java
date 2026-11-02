@@ -6,7 +6,7 @@ import com.pettown.common.result.Result;
 import com.pettown.common.security.config.PetTownToken;
 import com.pettown.miniapp.auth.dto.AuthRequest;
 import com.pettown.miniapp.auth.vo.AuthResponse;
-import com.pettown.miniapp.auth.vo.UserInfoResponse;
+import com.pettown.miniapp.user.vo.UserInfoResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,18 +27,10 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "手机号密码登录")
+    @Operation(summary = "手机号密码及验证码登录，首次登录自动注册")
     public Result<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
-        User user = userAuthService.loginOrRegister(request.phone(), request.password());
+        User user = userAuthService.loginOrRegister(request.phone(), request.password(), request.verificationCode());
         return Result.success(issueToken(user));
-    }
-
-    @GetMapping("/me")
-    @Operation(summary = "获取当前用户信息")
-    public Result<UserInfoResponse> me() {
-        PetTownToken.USER.checkLogin();
-        User user = userAuthService.getById(PetTownToken.USER.getLoginIdAsString());
-        return Result.success(new UserInfoResponse(user.getId(), user.getPhone()));
     }
 
     private AuthResponse issueToken(User user) {

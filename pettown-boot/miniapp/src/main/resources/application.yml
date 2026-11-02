@@ -47,6 +47,8 @@ server:
   forward-headers-strategy: framework
 
 pettown:
+  redis:
+    enabled: ${PETTOWN_REDIS_ENABLED:true}
   user:
     enabled: true
 

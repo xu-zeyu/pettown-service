@@ -24,10 +24,10 @@
 
 | 模块 | 职责与内部目录 |
 | --- | --- |
-| `common-core` | 公共核心；`constant` 公共常量、`enums` 公共枚举、`exception` 公共异常、`result` 统一结果类型、`util` 通用工具、`validation` 通用校验。 |
+| `common-core` | 公共核心；`cache/Cache` 缓存接口、`constant` 公共常量、`enums` 公共枚举、`exception` 公共异常、`result` 统一结果类型、`util` 通用工具、`validation` 通用校验。 |
 | `common-web` | Web 公共组件；`advice` 全局处理、`config` Web 配置、`filter` 过滤器、`interceptor` 拦截器、`response` 响应处理。 |
 | `common-mybatis` | MyBatis-Plus 公共组件；根包分页与排序参数、`config` 分页插件与自动填充、`mapper/BaseMapperX` 通用 CRUD 和 Join、`model/BaseEntity` 时间字段、`utils/MyBatisUtils` 查询工具。 |
-| `common-redis` | Redis 公共组件；`config` 配置、`util` Redis 工具。 |
+| `common-redis` | Redis 公共组件；`CacheUtils` 为 Redisson 缓存实现、`config` 配置与 JSON 编解码、`util/RedisCache` 为原字符串缓存 API 的兼容入口。 |
 | `common-security` | 安全认证公共组件；`config` 配置、`annotation` 注解、`filter` 安全过滤器、`handler` 安全处理。 |
 | `common-file` | 文件管理公共组件；`config` 配置、`service` 文件服务、`properties` 配置属性。 |
 | `common-log` | 日志公共组件；`annotation` 操作注解、`aspect` 操作日志、`filter` 请求追踪。 |
@@ -40,7 +40,7 @@
 | --- | --- | --- |
 | `module-business` | `com.pettown.business` | 共享核心业务；现有宠物实体、Service 和 Mapper 位于 `pet` 业务包。 |
 | `module-app` | `com.pettown.app` | App 端 Controller、请求 DTO、响应 VO；现有宠物接口位于 `pet` 业务包。 |
-| `module-miniapp` | `com.pettown.miniapp` | 小程序端接口；账号登录注册调用 `module-business` 用户业务。 |
+| `module-miniapp` | `com.pettown.miniapp` | 小程序端接口；账号登录即注册依赖共享用户业务，验证码生成和消费依赖共享 `verification` 业务。 |
 | `module-admin` | `com.pettown.admin` | 管理后台接口；目前仅保留模块入口。 |
 
 现有宠物业务的实际目录：
