@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: pettown-admin
+  config:
+    import: optional:file:${PETTOWN_ENV_FILE:./.env}[.properties]
+  autoconfigure:
+    exclude: ${PETTOWN_AUTOCONFIG_EXCLUDES:org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration}
+  datasource:
+    driver-class-name: ${DB_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
+    url: ${DB_URL:}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+pettown:
+  redis:
+    enabled: ${PETTOWN_REDIS_ENABLED:false}
+
+server:
+  port: ${SERVER_PORT:8081}

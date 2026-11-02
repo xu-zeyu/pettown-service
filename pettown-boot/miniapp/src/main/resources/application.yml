@@ -1,0 +1,101 @@
+spring:
+  application:
+    name: pettown-miniapp
+  config:
+    import: optional:file:${PETTOWN_ENV_FILE:./.env}[.properties]
+  cloud:
+    config:
+      enabled: ${SPRING_CLOUD_CONFIG_ENABLED:true}
+      fail-fast: ${SPRING_CLOUD_CONFIG_FAIL_FAST:false}
+      uri: ${SPRING_CLOUD_CONFIG_URI:http://localhost:8888}
+      username: ${SPRING_CLOUD_CONFIG_USERNAME:config-server}
+      password: ${SPRING_CLOUD_CONFIG_PASSWORD:config-server-password}
+      profile: ${SPRING_CLOUD_CONFIG_PROFILE:dev}
+      label: ${SPRING_CLOUD_CONFIG_LABEL:main}
+
+  web:
+    resources:
+      add-mappings: false
+
+  datasource:
+    driver-class-name: ${DB_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
+    url: ${DB_URL:}
+    username: ${DB_USERNAME:}
+    password: ${DB_PASSWORD:}
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  servlet:
+    multipart:
+      # 单个文件最大 20MB
+      max-file-size: 20MB
+      # 整个 multipart 请求最大 25MB
+      max-request-size: 25MB
+
+server:
+  port: ${SERVER_PORT:8082}
+  forward-headers-strategy: framework
+
+pettown:
+  user:
+    enabled: true
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    auto-mapping-behavior: full
+  global-config:
+    db-config:
+      id-type: auto
+      update-strategy: not_null
+
+############## Sa-Token 配置 (文档: https://sa-token.cc) ##############
+sa-token:
+  # token 名称（同时也是 cookie 名称）
+  token-name: Authorization
+  # token 有效期（单位：秒） 默认30天，-1 代表永久有效
+  timeout: ${PETTOWN_TOKEN_TIMEOUT:2592000}
+  # token 最低活跃频率（单位：秒），如果 token 超过此时间没有访问系统就会被冻结，默认-1 代表不限制，永不冻结
+  active-timeout: -1
+  # 是否允许同一账号多地同时登录 （为 true 时允许一起登录, 为 false 时新登录挤掉旧登录）
+  is-concurrent: false
+  # 在多人登录同一账号时，是否共用一个 token （为 true 时所有登录共用一个 token, 为 false 时每次登录新建一个 token）
+  is-share: false
+  # token 风格（默认可取值：uuid、simple-uuid、random-32、random-64、random-128、tik）
+  token-style: random-64
+  # 是否输出操作日志
+  is-log: true
+  # token 前缀
+  token-prefix: Bearer
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+aliyun:
+  oss:
+    endpoint: ${ALIYUN_OSS_ENDPOINT}
+    access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID}
+    access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET}
+    bucket-name: ${ALIYUN_OSS_BUCKET_NAME}
+    region: ${ALIYUN_OSS_REGION}
+
+pythonService:
+  api: ${PYTHON_SERVICE_API:http://192.168.7.51:8080/api/v1/repos}
+

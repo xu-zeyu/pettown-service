@@ -4,7 +4,7 @@
 
 从 `ai-commerce/ai-commerce-common` 的统一响应、错误码、业务异常和全局异常处理提取公共能力，分别落在 `common-core` 和 `common-web`，并调整为 `com.pettown` 包名。未使用源模块的数据库、Redis、认证和配置中心依赖。
 
-运行：`./gradlew :pettown-boot:bootRun`
+运行：`./gradlew :pettown-boot:app:bootRun`（先按 [启动说明](run.md) 配置 App 的 `.env`）。
 
 新增宠物：
 

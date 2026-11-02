@@ -1,1 +1,4 @@
-// 公共基础类型与工具；按实际实现添加依赖。
+dependencies {
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
+}

@@ -12,4 +12,6 @@ listOf("module-business", "module-app", "module-miniapp", "module-admin")
         project(":$module").projectDir = file("pettown-modules/$module")
     }
 
-include(":pettown-boot")
+listOf("app", "admin", "miniapp").forEach { client ->
+    include(":pettown-boot:$client")
+}

@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS user_account (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    phone VARCHAR(11) NOT NULL,
+    password_hash VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_user_account_phone (phone)
+);

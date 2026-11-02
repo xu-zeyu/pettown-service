@@ -4,6 +4,9 @@ mybatis-plus = "3.5.15"
 redisson = "3.19.3"
 sa-token = "1.44.0"
 aliyun-oss = "3.17.4"
+lombok = "1.18.46"
+springdoc = "2.10.0"
+swagger-annotations = "2.2.55"
 
 [libraries]
 spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
@@ -18,6 +21,9 @@ redisson = { module = "org.redisson:redisson", version.ref = "redisson" }
 sa-token-spring-boot3-starter = { module = "cn.dev33:sa-token-spring-boot3-starter", version.ref = "sa-token" }
 sa-token-core = { module = "cn.dev33:sa-token-core", version.ref = "sa-token" }
 aliyun-oss = { module = "com.aliyun.oss:aliyun-sdk-oss", version.ref = "aliyun-oss" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+springdoc-openapi-webmvc-api = { module = "org.springdoc:springdoc-openapi-starter-webmvc-api", version.ref = "springdoc" }
+swagger-annotations-jakarta = { module = "io.swagger.core.v3:swagger-annotations-jakarta", version.ref = "swagger-annotations" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
