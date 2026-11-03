@@ -28,7 +28,7 @@
 | `common-web` | Web 公共组件；`advice` 全局处理、`config` Web 配置、`filter` 过滤器、`interceptor` 拦截器、`response` 响应处理。 |
 | `common-mybatis` | MyBatis-Plus 公共组件；根包分页与排序参数、`config` 分页插件与自动填充、`mapper/BaseMapperX` 通用 CRUD 和 Join、`model/BaseEntity` 时间字段、`utils/MyBatisUtils` 查询工具。 |
 | `common-redis` | Redis 公共组件；`CacheUtils` 为 Redisson 缓存实现、`config` 配置与 JSON 编解码、`util/RedisCache` 为原字符串缓存 API 的兼容入口。 |
-| `common-security` | 安全认证公共组件；`config` 配置、`annotation` 注解、`filter` 安全过滤器、`handler` 安全处理。 |
+| `common-security` | 安全认证公共组件；`config` 账号空间与 Servlet 上下文装配、`interceptor` 通用分发拦截、`handler` 安全异常处理。 |
 | `common-file` | 文件管理公共组件；`config` 配置、`service` 文件服务、`properties` 配置属性。 |
 | `common-log` | 日志公共组件；`annotation` 操作注解、`aspect` 操作日志、`filter` 请求追踪。 |
 
@@ -60,6 +60,8 @@
 ## Boot 模块
 
 `pettown-boot/app`、`pettown-boot/admin`、`pettown-boot/miniapp` 是三个独立可运行的 Gradle 子工程。每个工程只依赖自己的客户端模块，启动类扫描自己的客户端包、实际使用的共享业务包和公共包；每个工程各有一份 `application.yml`、一个 `.env.example` 和日志配置。三个工程的接口装配测试使用独立 H2 数据库。App 只扫描宠物 Mapper，小程序只扫描用户 Mapper，Admin 只扫描后台业务 Mapper，避免装配其他客户端未使用的业务。Admin 使用账号、角色、权限、角色权限四表，账号通过 `admin_account.role_id` 关联单个角色；不依赖账号角色中间表。初始化和启动见 [Admin 接口说明](admin-api.md)。
+
+App 与小程序的安全配置分别位于各自 Boot 的 `config`，统一通过 `PetTownToken.USER` 校验登录；App 宠物接口不再匿名开放。Admin 在客户端模块的 `config` 注册拦截器，`interceptor` 负责管理员专属校验，`auth/controller` 的公开方法通过 `@SaIgnore` 声明。三端 Boot 均按需依赖 `common-security` 和 Redis 会话组件，公共模块不承载管理员业务规则。详见 [Sa-Token 与接口放行](common-modules.md#sa-token-与接口放行)。
 
 ## 依赖方向
 

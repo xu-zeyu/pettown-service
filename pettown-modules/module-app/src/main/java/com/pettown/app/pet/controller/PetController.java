@@ -5,6 +5,9 @@ import com.pettown.common.log.annotation.Log;
 import com.pettown.app.pet.dto.CreatePetRequest;
 import com.pettown.app.pet.vo.PetResponse;
 import com.pettown.business.pet.service.PetService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
@@ -18,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/pets")
+@Tag(name = "App 宠物管理")
+@SecurityRequirement(name = "bearerAuth")
 public class PetController {
     private final PetService petService;
 
@@ -26,6 +31,7 @@ public class PetController {
     }
 
     @PostMapping
+    @Operation(summary = "创建宠物", description = "需要用户登录，创建成功返回宠物信息及资源地址")
     @Log(value = "创建宠物", operationType = "CREATE")
     public ResponseEntity<Result<PetResponse>> createPet(@Valid @RequestBody CreatePetRequest request) {
         PetResponse pet = PetResponse.from(petService.createPet(request.name(), request.species()));
@@ -33,11 +39,13 @@ public class PetController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "获取宠物详情", description = "需要用户登录")
     public Result<PetResponse> getPet(@PathVariable("id") Long id) {
         return Result.success(PetResponse.from(petService.getPet(id)));
     }
 
     @GetMapping
+    @Operation(summary = "查询宠物列表", description = "需要用户登录")
     public Result<List<PetResponse>> listPets() {
         return Result.success(petService.listPets().stream().map(PetResponse::from).toList());
     }

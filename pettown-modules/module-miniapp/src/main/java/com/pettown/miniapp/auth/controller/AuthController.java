@@ -1,5 +1,6 @@
 package com.pettown.miniapp.auth.controller;
 
+import cn.dev33.satoken.annotation.SaIgnore;
 import com.pettown.business.user.entity.User;
 import com.pettown.business.user.service.UserAuthService;
 import com.pettown.common.result.Result;
@@ -27,6 +28,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @SaIgnore
     @Operation(summary = "手机号密码及验证码登录，首次登录自动注册",
             description = "首次注册的用户来源从 User-Agent 自动识别，无需在请求体传递；后续登录不修改注册来源")
     public Result<AuthResponse> login(@Valid @RequestBody AuthRequest request, HttpServletRequest httpRequest) {

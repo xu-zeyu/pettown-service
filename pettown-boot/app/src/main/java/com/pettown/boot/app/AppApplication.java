@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import com.pettown.boot.EnvFileSupport;
 
 @MapperScan("com.pettown.business.pet.mapper")
-@SpringBootApplication(scanBasePackages = {"com.pettown.app", "com.pettown.business.pet", "com.pettown.common"})
+@SpringBootApplication(scanBasePackages = {"com.pettown.boot.app", "com.pettown.app", "com.pettown.business.pet", "com.pettown.common"})
 public class AppApplication {
     public static void main(String[] args) {
         EnvFileSupport.useClientEnvWhenStartedFromRepository("app");

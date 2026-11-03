@@ -1,5 +1,6 @@
 package com.pettown.admin.auth.controller;
 
+import cn.dev33.satoken.annotation.SaIgnore;
 import com.pettown.admin.auth.dto.AdminSmsLoginRequest;
 import com.pettown.admin.system.vo.AdminInfoResponse;
 import com.pettown.admin.system.vo.AdminRoleResponse;
@@ -29,6 +30,7 @@ public class AdminLoginController {
     }
 
     @PostMapping("/login/sms")
+    @SaIgnore
     @Operation(summary = "管理员密码和短信验证码登录", description = "公开接口；username、password、smsCode 三项校验成功后返回 Token 字符串，使用 Authorization: Bearer <token>；存量初始账号仍须先改密")
     @Log("管理员短信验证码登录")
     public Result<String> smsLogin(@Valid @RequestBody AdminSmsLoginRequest request) {
@@ -40,6 +42,7 @@ public class AdminLoginController {
     }
 
     @PostMapping("/public/captcha/login/{name}")
+    @SaIgnore
     @Operation(summary = "生成管理员登录验证码", description = "公开接口；按账号查询手机号，生成六位数字、五分钟有效的管理员专用验证码；只写入 Redis，不返回验证码；当前尚未接入短信投递服务")
     public Result<Void> createLoginCode(@PathVariable @NotBlank @Size(max = 50) String name) {
         service.generateLoginCode(name);

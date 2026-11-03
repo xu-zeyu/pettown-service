@@ -2,7 +2,7 @@
 
 Admin 对齐 `jinHan-shop-admin-web` 的管理员认证、个人资料、角色、权限目录与批量同步功能，代码遵守本仓库 Controller / Service / Mapper 分层：
 
-- `module-admin/com.pettown.admin.auth`：登录入口、登录 DTO、管理员鉴权配置；`system/controller`、`system/dto`、`system/vo`：账号、角色、权限接口及显式响应转换。
+- `module-admin/com.pettown.admin.auth`：登录入口、登录 DTO、权限注解；`config`：管理员鉴权装配与权限提供器；`interceptor`：账号状态、会话版本与权限校验；`system/controller`、`system/dto`、`system/vo`：账号、角色、权限接口及显式响应转换。
 - `module-business/com.pettown.business.admin`：实体、Mapper、Service 接口与实现；不依赖客户端 DTO 或 HTTP 类型。
 - `pettown-boot/admin`：启动、有限范围扫描、环境变量、初始管理员及 OpenAPI 装配；额外扫描验证码业务，不扫描其他客户端业务。
 
@@ -37,7 +37,7 @@ Admin 对齐 `jinHan-shop-admin-web` 的管理员认证、个人资料、角色�
 
 ## 认证与授权
 
-只有两个登录入口及验证码生成入口公开。`self`、`info` 需要管理员登录。新增管理员、角色、权限维护及查询接口均要求 `SUB_ADMIN`；参考代码对部分管理操作只检查登录，本项目保留明确的管理权限检查。原有 `/system` 接口仍按各自 `system:*` 权限检查。
+只有两个登录入口及验证码生成入口通过方法上的 `@SaIgnore` 公开。其余接口默认要求管理员登录，不能仅凭 `/public` 路径命名放行；`/error`、`/v3/api-docs` 及其子路径由配置排除。`self`、`info` 需要管理员登录。新增管理员、角色、权限维护及查询接口均要求 `SUB_ADMIN`；参考代码对部分管理操作只检查登录，本项目保留明确的管理权限检查。原有 `/system` 接口仍按各自 `system:*` 权限检查。
 
 Token 是 Sa-Token 不透明 Token，使用 `PetTownToken.ADMIN`，与用户账号空间隔离，通过 `Authorization: Bearer <token>` 传递。生产会话始终使用 RedisTemplate，默认有效期 7200 秒；不接收 Cookie 或请求体 Token，不记录密码、验证码和 Token。
 
@@ -67,7 +67,9 @@ Token 是 Sa-Token 不透明 Token，使用 `PetTownToken.ADMIN`，与用户账�
 
 ## 部署与迁移
 
-全新数据库执行 [`sql/admin.sql`](sql/admin.sql)，只创建 `admin_account`、`admin_role`、`admin_permission`、`admin_role_permission` 四表。已有这四张表时，执行 [`sql/admin-single-role.sql`](sql/admin-single-role.sql)，自动补充缺失的 `role_id` 字段、查询索引与删除账号权限。若是缺少手机号、头像等字段的最早版本，先执行一次 [`sql/admin-reference-alignment.sql`](sql/admin-reference-alignment.sql)，再执行单角色迁移。迁移不会推断已丢失的角色绑定，若旧关联表已被手动删除且账号没有 role_id，须通过设置角色接口重新关联。脚本不由应用自动执行；测试 schema 与全新部署脚本保持一致。旧账号须通过 `/system/accounts/{id}` 资料修改接口补充正确手机号，超级管理员手机号由运维补充；不会读取参考工程数据库或导入其账号。
+当前仓库未包含本节引用的 `docs/sql/admin.sql`、`admin-single-role.sql`、`admin-reference-alignment.sql`。以下是原约定的部署流程，须先补齐并核对 SQL，不能将这些链接视为现成脚本。Admin 的 7 项迁移测试也因缺少对应资源失败；本次 Sa-Token 改动未重建或执行迁移 SQL。
+
+全新数据库执行 [`sql/admin.sql`](sql/admin.sql)，只创建 `admin_account`、`admin_role`、`admin_permission`、`admin_role_permission` 四表。已有这四张表时，执行 [`sql/admin-single-role.sql`](sql/admin-single-role.sql)，自动补充缺失的 `role_id` 字段、查询索引与删除账号权限。若是缺少手机号、头像等字段的最早版本，先执行一次 [`sql/admin-reference-alignment.sql`](sql/admin-reference-alignment.sql)，再执行单角色迁移。迁移不会推断已丢失的角色绑定，若旧关联表已被手动删除且账号没有 role_id，须通过设置角色接口重新关联。脚本不由应用自动执行；测试 schema 描述当前四表结构，部署脚本缺失时无法核对二者一致性。旧账号须通过 `/system/accounts/{id}` 资料修改接口补充正确手机号，超级管理员手机号由运维补充；不会读取参考工程数据库或导入其账号。
 
 复制 `pettown-boot/admin/.env.example` 为同目录 `.env`，配置本服务 MySQL、Redis。管理验证码需要 Redisson，`PETTOWN_REDIS_ENABLED` 默认 `true`；关闭后验证码调用明确失败，不回退到内存。RedisTemplate 会话不受该开关影响。
 
@@ -87,4 +89,4 @@ Token 是 Sa-Token 不透明 Token，使用 `PetTownToken.ADMIN`，与用户账�
 
 HTTP 集成测试使用 H2 MySQL 模式、Mock 缓存和仅测试使用的 Sa-Token 内存 DAO，覆盖四表结构、单角色替换/清空、独立删除账号/角色、验证码隔离/一次性消费、动态权限、授权替换/清空、删除/改名生效、账号会话撤销及真实 `/v3/api-docs` 输出。未调用真实 MySQL、Redis、短信服务，也未进行 Apifox 客户端导入验证。
 
-单角色迁移的前置检查与数据复制 SQL 使用 H2 验证；MySQL 存储过程、DDL 和真实业务数据库尚未执行验证。
+单角色迁移测试原设计使用 H2 验证前置检查与数据复制 SQL；当前因 SQL 文件缺失尚未通过。MySQL 存储过程、DDL 和真实业务数据库也未执行验证。

@@ -21,6 +21,24 @@ pettown:
 server:
   port: ${SERVER_PORT:8080}
 
+springdoc:
+  packages-to-scan: com.pettown.app
+  paths-to-match: /api/pets/**
+  default-flat-param-object: true
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: ${PETTOWN_TOKEN_TIMEOUT:2592000}
+  active-timeout: -1
+  is-concurrent: false
+  is-share: false
+  is-read-header: true
+  is-read-cookie: false
+  is-read-body: false
+  token-style: random-64
+  is-log: ${SA_TOKEN_IS_LOG:false}
+
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true

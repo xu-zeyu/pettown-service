@@ -85,6 +85,10 @@ sa-token:
   is-log: ${SA_TOKEN_IS_LOG:false}
   # token 前缀
   token-prefix: Bearer
+  # 仅从 Authorization 请求头读取，不接收 Cookie 或请求参数中的 Token
+  is-read-header: true
+  is-read-cookie: false
+  is-read-body: false
 
 management:
   endpoints:

@@ -1,5 +1,6 @@
 package com.pettown.miniapp.verification.controller;
 
+import cn.dev33.satoken.annotation.SaIgnore;
 import com.pettown.business.verification.service.VerificationCodeService;
 import com.pettown.common.result.Result;
 import com.pettown.miniapp.verification.dto.VerificationCodeRequest;
@@ -20,6 +21,7 @@ public class VerificationCodeController {
     private  VerificationCodeService verificationCodeService;
 
     @PostMapping
+    @SaIgnore
     @Operation(summary = "生成并缓存六位验证码", description = "有效期 5 分钟，按用途和手机号隔离存储，暂不发送短信")
     public Result<Void> generate(@Valid @RequestBody VerificationCodeRequest request) {
         verificationCodeService.generate(request.phone(), request.type());

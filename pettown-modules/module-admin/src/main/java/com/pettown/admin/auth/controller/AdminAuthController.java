@@ -1,5 +1,6 @@
 package com.pettown.admin.auth.controller;
 
+import cn.dev33.satoken.annotation.SaIgnore;
 import com.pettown.admin.system.dto.ChangePasswordRequest;
 import com.pettown.admin.system.dto.LoginRequest;
 import com.pettown.admin.system.vo.AccountResponse;
@@ -30,6 +31,7 @@ public class AdminAuthController {
     }
 
     @PostMapping("/login")
+    @SaIgnore
     @Operation(summary = "管理员密码和短信验证码登录", description = "公开接口；username、password、smsCode 三项校验成功后返回管理员 Token 及账号信息。初始账号或被重置密码的账号须先修改密码")
     @Log("管理员登录")
     public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {

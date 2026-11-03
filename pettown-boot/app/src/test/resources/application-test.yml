@@ -2,7 +2,7 @@ spring:
   config:
     import: ""
   autoconfigure:
-    exclude: ""
+    exclude: cn.dev33.satoken.dao.SaTokenDaoForRedisTemplate
   datasource:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:pettown-app;MODE=MySQL;DB_CLOSE_DELAY=-1

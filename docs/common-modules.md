@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | `common-mybatis` | MyBatis-Plus 分页、排序、Join、`BaseMapperX` CRUD/批量操作、自动填充、基础实体与分页结果 | 三个 Boot 工程均已依赖；App 与小程序须配置数据库连接并先执行建表脚本。 |
 | `common-redis` | `CacheUtils` Redisson 缓存、Map 操作，兼容 `RedisCache` 字符串 API | 三个 Boot 工程均已依赖该模块；通过各自 `.env` 配置 Redis。小程序默认启用 Redisson，App 按需启用，Admin 默认启用以缓存登录验证码。 |
-| `common-security` | Sa-Token 的 `user`、`admin` 独立账号空间及 401/403 异常响应 | 公共模块提供核心能力，HTTP Token 解析由小程序和 Admin Boot 引入 starter。Admin 的 RBAC、Redis 会话及初始化见 [Admin 接口说明](admin-api.md)。 |
+| `common-security` | Sa-Token starter、`user` / `admin` 独立账号空间、Servlet 上下文、分发拦截器及 401/403 异常响应 | 三端 Boot 装配本端拦截规则与 RedisTemplate 会话。Admin 的 RBAC 及初始化见 [Admin 接口说明](admin-api.md)。 |
 | `common-file` | `FileService` 的阿里云 OSS 上传下载实现 | 使用方依赖该模块，设置 `pettown.file.enabled=true` 及 `aliyun.oss.endpoint`、`access-key-id`、`access-key-secret`、`bucket-name`、`region`。密钥通过环境变量或部署配置传入。 |
 | `common-log` | `@Log` 操作日志、`X-Trace-Id` 请求追踪、滚动文件日志 | 三个 Boot 工程共用日志配置；默认写到 `logs/${spring.application.name}.log`，可通过 `logging.file.name` 改路径；`test` Profile 仅输出控制台。 |
 
@@ -16,7 +16,25 @@
 ./gradlew build
 ```
 
-宠物与用户 Mapper 已统一继承 `BaseMapperX`，由 MyBatis-Plus 代理执行数据库操作。宠物数据保存至 `pet`，用户账号保存至 `user_account`。原文档引用的 `sql/persistence.sql` 当前不在仓库中，不能作为现成的初始化脚本使用。已有账号表上线来源字段前，执行一次 [`sql/user-source.sql`](sql/user-source.sql)；脚本不由应用自动执行。OSS 仍需配置真实服务与账号。
+宠物与用户 Mapper 已统一继承 `BaseMapperX`，由 MyBatis-Plus 代理执行数据库操作。宠物数据保存至 `pet`，用户账号保存至 `user_account`。原文档引用的 `sql/persistence.sql` 当前不在仓库中，不能作为现成的初始化脚本使用。已有账号表上线来源字段前需要增量 SQL；原引用的 `sql/user-source.sql` 当前也不存在，须先补齐并核对，应用不自动执行迁移。OSS 仍需配置真实服务与账号。
+
+## Sa-Token 与接口放行
+
+参考 `ai-commerce` 的 `SaTokenConfigure` 和 `SaTokenDispatchInterceptor`，由 `common-security` 统一提供 starter、上下文过滤器和分发拦截器。上下文过滤器参与 REQUEST / ASYNC 分发；拦截器在首次请求校验注解和登录状态，ASYNC / ERROR 内部分发不重复鉴权，FORWARD / INCLUDE 仍须校验。各端默认拦截 `/**`，仅排除 `/error`、`/v3/api-docs`、`/v3/api-docs/**`；业务公开接口通过具体方法上的 `@SaIgnore` 显式放行，不整体放行 `/public/**` 或 `/auth/**`。
+
+| 客户端 | 账号空间与受保护接口 | 公开业务接口 |
+| --- | --- | --- |
+| App | `PetTownToken.USER`；全部 `/api/pets` 及详情、创建接口需要登录 | 当前没有公开业务接口，也未新增 App 登录入口 |
+| 小程序 | `PetTownToken.USER`；`/api/miniapp/user/me` 及新增接口默认需要登录 | `POST /api/miniapp/auth/login`、`POST /api/miniapp/verification/code` |
+| Admin | `PetTownToken.ADMIN`；继续校验账号启用状态、会话版本、初始改密及管理权限 | `POST /api/admin/auth/login`、`POST /api/admin/login/sms`、`POST /api/admin/public/captcha/login/{name}` |
+
+三端只接受 `Authorization: Bearer <token>`，不读取 Cookie、请求体或 query 中的 Token。App 与小程序使用相同用户账号空间，配置相同 Redis 实例和数据库后，可使用小程序登录接口签发的用户 Token 调用 App；管理员 Token 不能调用用户接口，用户 Token 也不能调用 Admin。App 和小程序默认有效期为 2592000 秒（`PETTOWN_TOKEN_TIMEOUT`），同账号新登录替换旧会话；Admin 保留 7200 秒及多终端独立 Token 的既有配置。
+
+三端生产会话均使用 RedisTemplate，与 `PETTOWN_REDIS_ENABLED` 控制的 Redisson 业务缓存独立；关闭该开关不会禁用会话 Redis，也不会回退到内存。App 从原来的匿名宠物接口改为必须登录，部署时须配置可用 Redis；小程序从内存会话切换为 Redis 后，原有内存 Token 不会迁移，用户需重新登录。测试 Profile 排除 Redis DAO，使用隔离的测试存储，不连接真实 Redis。
+
+App、小程序的拦截器注册位于各自 Boot 的 `config`；Admin 的注册与权限拦截分别位于 `module-admin/com.pettown.admin.config`、`interceptor`。公共模块不依赖任何客户端或管理员业务。新增公开方法时添加 `@SaIgnore` 并核对 OpenAPI；新增受保护方法保持默认拦截，Admin 管理接口还须声明 `@AdminCheckPermission`。使用 Sa-Token 原生登录/权限注解时，须显式指定对应 `type = "user"` 或 `type = "admin"`，避免落到默认账号空间。
+
+三端 OpenAPI 地址分别为默认端口 8080 / 8081 / 8082 的 `/v3/api-docs`。App 文档仅包含既有 `/api/pets` 路径并声明用户 Bearer 认证。自动化测试验证实际 OpenAPI 输出，不代表已完成 Apifox 客户端导入。
 
 ## 注册来源
 
@@ -26,7 +44,7 @@
 
 ## 日志配置
 
-三个 Boot 工程的 `logback-spring.xml` 统一引用 `common-log` 中的配置。默认框架日志为 `WARN`，`com.pettown` 业务日志为 `INFO`；操作成功记录保留，预期内的业务失败、参数错误及操作失败上下文降为 `DEBUG`，系统异常由全局异常处理器输出一次完整 `ERROR` 堆栈。控制台与文件均包含 Trace ID，操作日志正文不再重复记录 Trace ID。小程序的 Sa-Token 操作日志默认关闭，排查时可设置 `SA_TOKEN_IS_LOG=true`。
+三个 Boot 工程的 `logback-spring.xml` 统一引用 `common-log` 中的配置。默认框架日志为 `WARN`，`com.pettown` 业务日志为 `INFO`；操作成功记录保留，预期内的业务失败、参数错误及操作失败上下文降为 `DEBUG`，系统异常由全局异常处理器输出一次完整 `ERROR` 堆栈。控制台与文件均包含 Trace ID，操作日志正文不再重复记录 Trace ID。App 和小程序的 Sa-Token 操作日志默认关闭，排查时可设置 `SA_TOKEN_IS_LOG=true`。
 
 正常运行时，App、Admin、小程序分别写入 `logs/pettown-app.log`、`logs/pettown-admin.log`、`logs/pettown-miniapp.log`，避免在同一工作目录启动时共用一个文件。日志按天和大小滚动，单文件默认 `10MB`，归档压缩保留 `7` 天，归档总量上限 `100MB`；启动时也清理过期归档。容量限制针对每个服务的归档文件，当前活动文件另计，清理异步执行。`test` Profile 不创建文件日志。
 
@@ -80,7 +98,7 @@ cp -n pettown-boot/app/.env.example pettown-boot/app/.env
 ./gradlew :pettown-boot:app:bootRun
 ```
 
-App 与小程序须在对应 `.env` 填写有效数据库连接，小程序还须配置 Redis 以支持验证码。Admin 现已接入后台账号与 RBAC Mapper，默认启用数据源，须执行 [`sql/admin.sql`](sql/admin.sql) 并配置 MySQL、Redis；管理会话固定使用 RedisTemplate，不受 Redisson 开关影响。小程序的 `PETTOWN_REDIS_ENABLED` 默认 `true`，Admin 默认 `true`，App 默认 `false`，需要缓存时设为 `true`。旧的 `pettown-boot/config/connection-secrets.yml` 不再被读取，迁移时请将其中的连接信息填入相应服务的 `.env`。应用只连接各自配置的数据库，不自动访问参考项目数据库。
+App 与小程序须在对应 `.env` 填写有效数据库连接；三端均须配置 Redis 以支持登录会话，小程序和 Admin 还通过 Redisson 缓存验证码。Admin 现已接入后台账号与 RBAC Mapper，默认启用数据源，须准备建表/迁移 SQL 并配置 MySQL、Redis（原引用的 `docs/sql/admin.sql` 等脚本当前缺失，见 [Admin 部署说明](admin-api.md#部署与迁移)）；三端会话固定使用 RedisTemplate，不受 Redisson 开关影响。小程序的 `PETTOWN_REDIS_ENABLED` 默认 `true`，Admin 默认 `true`，App 默认 `false`，需要缓存时设为 `true`。旧的 `pettown-boot/config/connection-secrets.yml` 不再被读取，迁移时请将其中的连接信息填入相应服务的 `.env`。应用只连接各自配置的数据库，不自动访问参考项目数据库。
 
 ## Redis 与参考模块对齐
 

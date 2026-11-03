@@ -13,6 +13,7 @@ import com.pettown.business.admin.entity.AdminAccount;
 import com.pettown.business.admin.mapper.AdminAccountMapper;
 import com.pettown.business.admin.service.AdminService;
 import com.pettown.common.cache.Cache;
+import com.pettown.common.security.config.PetTownToken;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +57,32 @@ class AdminAlignmentTests {
     @TestConfiguration(proxyBeanMethods = false)
     static class TokenStorage {
         @Bean SaTokenDao testTokenDao() { return new SaTokenDaoDefaultImpl(); }
+        @Bean SecurityProbeController securityProbeController() { return new SecurityProbeController(); }
+    }
+
+    @org.springframework.web.bind.annotation.RestController
+    static class SecurityProbeController {
+        @org.springframework.web.bind.annotation.GetMapping({"/api/admin/public/security-probe", "/security-probe"})
+        com.pettown.common.result.Result<String> protectedEndpoint() {
+            return com.pettown.common.result.Result.success("ok");
+        }
+    }
+
+    @Test
+    void protectsNewEndpointsAndRequiresExplicitPermissionsEvenForPublicNamedPaths() throws Exception {
+        call("GET", "/public/security-probe", null, null, 401);
+        call("GET", "/public/security-probe", rootToken, null, 403);
+        String userToken = PetTownToken.USER.createLoginSession("fixture-user");
+        call("GET", "/self", userToken, null, 401);
+        mvc.perform(MockMvcRequestBuilders.get("/security-probe")).andExpect(
+                org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isUnauthorized());
+        mvc.perform(MockMvcRequestBuilders.get("/security-probe").header("Authorization", "Bearer " + rootToken))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isForbidden());
+        mvc.perform(MockMvcRequestBuilders.get("/api/admin/self").param("Authorization", "Bearer " + rootToken))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isUnauthorized());
+        mvc.perform(MockMvcRequestBuilders.get("/api/admin/self")
+                        .cookie(new jakarta.servlet.http.Cookie("Authorization", "Bearer " + rootToken)))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isUnauthorized());
     }
 
     @BeforeEach

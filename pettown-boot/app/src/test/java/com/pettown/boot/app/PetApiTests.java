@@ -2,6 +2,7 @@ package com.pettown.boot.app;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.pettown.common.security.config.PetTownToken;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,6 +24,7 @@ class PetApiTests {
     void createAndReadPetThroughHttp() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(PetTownToken.USER.createLoginSession("fixture-pet-owner"));
         ResponseEntity<String> created = restTemplate.postForEntity("/api/pets",
                 new HttpEntity<>("{\"name\":\"豆豆\",\"species\":\"猫\"}", headers), String.class);
         assertThat(created.getStatusCode().value()).isEqualTo(201);
@@ -30,15 +32,18 @@ class PetApiTests {
         assertThat(created.getHeaders().getLocation()).isNotNull();
         assertThat(created.getHeaders().getFirst("X-Trace-Id")).isNotBlank();
 
-        ResponseEntity<String> found = restTemplate.getForEntity(created.getHeaders().getLocation().toString(), String.class);
+        ResponseEntity<String> found = restTemplate.exchange(created.getHeaders().getLocation().toString(),
+                HttpMethod.GET, new HttpEntity<>(headers), String.class);
         assertThat(found.getStatusCode().value()).isEqualTo(200);
         assertThat(found.getBody()).contains("\"species\":\"猫\"");
 
-        ResponseEntity<String> listed = restTemplate.getForEntity("/api/pets", String.class);
+        ResponseEntity<String> listed = restTemplate.exchange("/api/pets", HttpMethod.GET,
+                new HttpEntity<>(headers), String.class);
         assertThat(listed.getStatusCode().value()).isEqualTo(200);
         assertThat(listed.getBody()).contains("\"name\":\"豆豆\"", "\"species\":\"猫\"");
 
-        ResponseEntity<String> missing = restTemplate.getForEntity("/api/pets/999999", String.class);
+        ResponseEntity<String> missing = restTemplate.exchange("/api/pets/999999", HttpMethod.GET,
+                new HttpEntity<>(headers), String.class);
         assertThat(missing.getStatusCode().value()).isEqualTo(404);
         assertThat(missing.getBody()).contains("\"code\":\"404\"");
 
@@ -46,5 +51,19 @@ class PetApiTests {
                 new HttpEntity<>("{\"name\":\"\",\"species\":\"猫\"}", headers), String.class);
         assertThat(invalid.getStatusCode().value()).isEqualTo(400);
         assertThat(invalid.getBody()).contains("宠物名称不能为空");
+    }
+
+    @Test
+    void rejectsAnonymousAndAdminTokensForAllPetOperations() {
+        ResponseEntity<String> anonymous = restTemplate.getForEntity("/api/pets", String.class);
+        assertThat(anonymous.getStatusCode().value()).isEqualTo(401);
+        assertThat(anonymous.getBody()).contains("\"code\":\"401\"");
+        assertThat(restTemplate.getForEntity("/api/pets/1", String.class).getStatusCode().value()).isEqualTo(401);
+        assertThat(restTemplate.postForEntity("/api/pets", "{}", String.class).getStatusCode().value()).isEqualTo(401);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(PetTownToken.ADMIN.createLoginSession(1L));
+        assertThat(restTemplate.exchange("/api/pets", HttpMethod.GET, new HttpEntity<>(headers), String.class)
+                .getStatusCode().value()).isEqualTo(401);
     }
 }
