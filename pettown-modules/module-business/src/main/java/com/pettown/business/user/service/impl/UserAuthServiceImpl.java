@@ -4,9 +4,10 @@ import com.pettown.business.user.entity.User;
 import com.pettown.business.user.mapper.UserMapper;
 import com.pettown.business.user.service.UserAuthService;
 import com.pettown.business.verification.service.VerificationCodeService;
+import com.pettown.common.commonEnum.UserSourceEnum;
 import com.pettown.common.exception.BusinessException;
 import com.pettown.common.exception.ErrorCodeEnum;
-import com.pettown.common.verificationEnum.VerificationCodeTypeEnum;
+import com.pettown.common.commonEnum.VerificationCodeTypeEnum;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -37,7 +38,7 @@ public class UserAuthServiceImpl implements UserAuthService {
     }
 
     @Override
-    public User loginOrRegister(String phone, String password, String verificationCode) {
+    public User loginOrRegister(String phone, String password, String verificationCode, UserSourceEnum source) {
         verificationCodeService.verifyAndConsume(phone, VerificationCodeTypeEnum.LOGIN_REGISTER, verificationCode);
         User existing = userMapper.findByPhone(phone).orElse(null);
         if (existing != null) {
@@ -45,7 +46,8 @@ public class UserAuthServiceImpl implements UserAuthService {
         }
         String passwordHash = passwordEncoder.encode(password);
         for (int attempt = 0; attempt < 3; attempt++) {
-            User user = new User(newUserId(), phone, passwordHash);
+            User user = new User(newUserId(), phone, passwordHash,
+                    source == null ? UserSourceEnum.UNKNOWN : source);
             try {
                 userMapper.insert(user);
                 return user;

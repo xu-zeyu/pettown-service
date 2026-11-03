@@ -1,6 +1,6 @@
 package com.pettown.miniapp.verification.dto;
 
-import com.pettown.common.verificationEnum.VerificationCodeTypeEnum;
+import com.pettown.common.commonEnum.VerificationCodeTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

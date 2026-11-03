@@ -11,7 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.pettown.common.verificationEnum.VerificationCodeTypeEnum;
+import com.pettown.common.commonEnum.VerificationCodeTypeEnum;
 import com.pettown.common.cache.Cache;
 import com.pettown.common.exception.BusinessException;
 import java.time.Duration;

@@ -3,12 +3,10 @@ spring:
     name: pettown-admin
   config:
     import: optional:file:${PETTOWN_ENV_FILE:./.env}[.properties]
-  autoconfigure:
-    exclude: ${PETTOWN_AUTOCONFIG_EXCLUDES:org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration}
   datasource:
     driver-class-name: ${DB_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
     url: ${DB_URL:}
-    username: ${DB_USERNAME:root}
+    username: ${DB_USERNAME:}
     password: ${DB_PASSWORD:}
   data:
     redis:
@@ -19,6 +17,35 @@ spring:
 pettown:
   redis:
     enabled: ${PETTOWN_REDIS_ENABLED:false}
+  admin:
+    bootstrap:
+      enabled: ${PETTOWN_ADMIN_BOOTSTRAP_ENABLED:false}
+      username: ${PETTOWN_ADMIN_BOOTSTRAP_USERNAME:}
+      password: ${PETTOWN_ADMIN_BOOTSTRAP_PASSWORD:}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    local-cache-scope: statement
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: ${PETTOWN_ADMIN_TOKEN_TIMEOUT:7200}
+  active-timeout: -1
+  is-concurrent: true
+  is-share: false
+  is-read-cookie: false
+  is-read-body: false
+  token-style: random-64
+  is-log: false
+  is-print: false
 
 server:
   port: ${SERVER_PORT:8081}
+
+springdoc:
+  packages-to-scan: com.pettown.admin
+  paths-to-match: /api/admin/**
+  default-flat-param-object: true

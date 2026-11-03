@@ -38,10 +38,10 @@
 
 | 模块 | 基础包 | 职责 |
 | --- | --- | --- |
-| `module-business` | `com.pettown.business` | 共享核心业务；现有宠物实体、Service 和 Mapper 位于 `pet` 业务包。 |
+| `module-business` | `com.pettown.business` | 共享核心业务；现有 `pet`、`user`、`verification` 及后台账号/RBAC 的 `admin` 业务包。 |
 | `module-app` | `com.pettown.app` | App 端 Controller、请求 DTO、响应 VO；现有宠物接口位于 `pet` 业务包。 |
 | `module-miniapp` | `com.pettown.miniapp` | 小程序端接口；账号登录即注册依赖共享用户业务，验证码生成和消费依赖共享 `verification` 业务。 |
-| `module-admin` | `com.pettown.admin` | 管理后台接口；目前仅保留模块入口。 |
+| `module-admin` | `com.pettown.admin` | 管理后台认证、管理员、角色、权限点及菜单接口，见 [Admin 接口说明](admin-api.md)。 |
 
 现有宠物业务的实际目录：
 
@@ -59,13 +59,13 @@
 
 ## Boot 模块
 
-`pettown-boot/app`、`pettown-boot/admin`、`pettown-boot/miniapp` 是三个独立可运行的 Gradle 子工程。每个工程只依赖自己的客户端模块，启动类扫描自己的客户端包、实际使用的共享业务包和公共包；每个工程各有一份 `application.yml`、一个 `.env.example` 和日志配置。App 和小程序工程包含基于独立 H2 数据库的接口装配测试。App 只扫描宠物 Mapper，小程序只扫描用户 Mapper，避免装配其他客户端未使用的业务。运行与部署方式见 [启动说明](run.md)。
+`pettown-boot/app`、`pettown-boot/admin`、`pettown-boot/miniapp` 是三个独立可运行的 Gradle 子工程。每个工程只依赖自己的客户端模块，启动类扫描自己的客户端包、实际使用的共享业务包和公共包；每个工程各有一份 `application.yml`、一个 `.env.example` 和日志配置。三个工程的接口装配测试使用独立 H2 数据库。App 只扫描宠物 Mapper，小程序只扫描用户 Mapper，Admin 只扫描后台业务 Mapper，避免装配其他客户端未使用的业务。Admin 初始化和启动见 [Admin 接口说明](admin-api.md)。
 
 ## 依赖方向
 
 - 父工程统一配置，不承载业务代码。
 - `pettown-common` 只提供基础能力，不依赖业务模块或 Boot 模块。
 - `module-business` 按需依赖公共模块，不依赖 App、小程序或管理后台模块。宠物与用户业务统一通过 `common-mybatis` 的 `BaseMapperX` 持久化，禁止在业务代码中使用 `JdbcTemplate` 或手写 JDBC；用户密码使用 BCrypt 保存哈希。
-- 客户端项目模块按需依赖 `module-business` 与公共模块。`module-app` 使用共享宠物业务、`common-core`、`common-web` 和 `common-log`；`module-miniapp` 使用共享用户业务、`common-web` 和 `common-security`；`module-admin` 暂无业务实现。客户端模块之间没有 Gradle 依赖。
+- 客户端项目模块按需依赖 `module-business` 与公共模块。`module-app` 使用共享宠物业务、`common-core`、`common-web` 和 `common-log`；`module-miniapp` 使用共享用户业务、`common-web` 和 `common-security`；`module-admin` 使用共享 `admin` 业务、`common-web`、`common-security` 和 `common-log`。客户端模块之间没有 Gradle 依赖。
 - 三个 Boot 子工程分别依赖自己的客户端模块及 `common-mybatis`、`common-redis`、`common-log`，负责最终装配；共享业务模块经客户端模块进入运行时。数据库和 Redis 的连接参数由各自 `.env` 提供，启用数据库自动配置与 Redisson 时须有可用服务。其他模块不得依赖 Boot。
 - 所有依赖保持单向，禁止循环依赖。

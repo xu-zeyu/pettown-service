@@ -58,7 +58,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Result<Void>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException e) {
         String requiredType = e.getRequiredType() == null ? "" : e.getRequiredType().getSimpleName();
         String errorMessage = String.format("参数类型错误：%s 应为 %s 类型", e.getName(), requiredType);
-        log.warn("参数类型不匹配: {}", errorMessage);
+        log.debug("参数类型不匹配: {}", errorMessage);
         return buildErrorResponse(
                 HttpStatus.BAD_REQUEST,
                 new BusinessException(ErrorCodeEnum.FAIL, errorMessage)
@@ -71,8 +71,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Result<Void>> handleBusinessException(BusinessException e) {
-        // 业务异常属于预期内的流程控制，只打一行提示；末尾不要传 e，否则会打印 BusinessException 那一行
-        log.warn("业务异常 - 错误码: {}, 错误信息: {}", e.getCommonErrorCode().getCode(), e.getMessage());
+        // 预期内的业务失败仅在排查时记录，不输出堆栈。
+        log.debug("业务异常 - 错误码: {}, 错误信息: {}", e.getCommonErrorCode().getCode(), e.getMessage());
         HttpStatus status = "404".equals(e.getCommonErrorCode().getCode())
                 ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
         return buildErrorResponse(status, e);
@@ -87,7 +87,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         String errorMessage = e.getConstraintViolations().stream()
                 .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
                 .collect(Collectors.joining(", "));
-        log.error("参数校验异常: {}", errorMessage, e);
+        log.debug("参数校验异常: {}", errorMessage);
         return buildErrorResponse(
                 HttpStatus.BAD_REQUEST,
                 new BusinessException(ErrorCodeEnum.FAIL, errorMessage)

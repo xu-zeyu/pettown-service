@@ -1,4 +1,4 @@
-package com.pettown.common.verificationEnum;
+package com.pettown.common.commonEnum;
 
 import lombok.Getter;
 

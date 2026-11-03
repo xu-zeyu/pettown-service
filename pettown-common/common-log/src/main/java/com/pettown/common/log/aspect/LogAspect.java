@@ -6,7 +6,6 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 
 @Aspect
@@ -19,12 +18,13 @@ public class LogAspect {
         long started = System.nanoTime();
         try {
             Object result = point.proceed();
-            LOGGER.info("operation={} type={} traceId={} success=true elapsedMs={}", operation.value(),
-                    operation.operationType(), MDC.get("traceId"), elapsed(started));
+            LOGGER.info("operation={} type={} success=true elapsedMs={}", operation.value(),
+                    operation.operationType(), elapsed(started));
             return result;
         } catch (Throwable error) {
-            LOGGER.warn("operation={} type={} traceId={} success=false elapsedMs={} error={}", operation.value(),
-                    operation.operationType(), MDC.get("traceId"), elapsed(started), error.toString());
+            // 异常由全局处理器统一记录，避免同一次失败在切面和处理器重复告警。
+            LOGGER.debug("operation={} type={} success=false elapsedMs={} error={}", operation.value(),
+                    operation.operationType(), elapsed(started), error.toString());
             throw error;
         }
     }

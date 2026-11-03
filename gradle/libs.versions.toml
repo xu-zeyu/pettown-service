@@ -23,6 +23,7 @@ h2 = { module = "com.h2database:h2" }
 redisson = { module = "org.redisson:redisson", version.ref = "redisson" }
 sa-token-spring-boot3-starter = { module = "cn.dev33:sa-token-spring-boot3-starter", version.ref = "sa-token" }
 sa-token-core = { module = "cn.dev33:sa-token-core", version.ref = "sa-token" }
+sa-token-redis-jackson = { module = "cn.dev33:sa-token-redis-jackson", version.ref = "sa-token" }
 aliyun-oss = { module = "com.aliyun.oss:aliyun-sdk-oss", version.ref = "aliyun-oss" }
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 springdoc-openapi-webmvc-api = { module = "org.springdoc:springdoc-openapi-starter-webmvc-api", version.ref = "springdoc" }

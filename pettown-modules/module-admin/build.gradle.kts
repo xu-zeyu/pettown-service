@@ -1,1 +1,7 @@
-// 后台功能落地时再按需声明公共模块依赖。
+dependencies {
+    implementation(project(":module-business"))
+    implementation(project(":common-web"))
+    implementation(project(":common-security"))
+    implementation(project(":common-log"))
+    implementation(libs.swagger.annotations.jakarta)
+}

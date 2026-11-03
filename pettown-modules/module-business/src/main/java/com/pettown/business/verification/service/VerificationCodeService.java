@@ -1,6 +1,6 @@
 package com.pettown.business.verification.service;
 
-import com.pettown.common.verificationEnum.VerificationCodeTypeEnum;
+import com.pettown.common.commonEnum.VerificationCodeTypeEnum;
 
 public interface VerificationCodeService {
     /** 生成并缓存验证码，返回值供服务端后续发送使用，不应在客户端接口返回。 */

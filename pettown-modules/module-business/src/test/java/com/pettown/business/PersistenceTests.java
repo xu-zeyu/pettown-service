@@ -16,6 +16,7 @@ import com.pettown.business.user.mapper.UserMapper;
 import com.pettown.business.user.service.UserAuthService;
 import com.pettown.business.user.service.impl.UserAuthServiceImpl;
 import com.pettown.business.verification.service.VerificationCodeService;
+import com.pettown.common.commonEnum.UserSourceEnum;
 import com.pettown.common.exception.BusinessException;
 import com.pettown.common.mybatis.PageParam;
 import com.pettown.common.mybatis.PageResult;
@@ -26,6 +27,8 @@ import com.pettown.common.mybatis.config.MybatisPlusConfig;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -118,16 +121,39 @@ class PersistenceTests {
 
     @Test
     void registersAndAuthenticatesWithStringIdsAndUniquePhones() {
-        User registered = userAuthService.loginOrRegister("13800138000", "strongPass123", "000007");
+        User registered = userAuthService.loginOrRegister("13800138000", "strongPass123", "000007",
+                UserSourceEnum.IOS);
         assertThat(registered.getId()).matches("pettown[0-9a-f]{24}");
         assertThat(registered.getPasswordHash()).startsWith("$2").isNotEqualTo("strongPass123");
         assertThat(userAuthService.getById(registered.getId()).getPhone()).isEqualTo("13800138000");
-        assertThat(userAuthService.loginOrRegister("13800138000", "strongPass123", "000007").getId())
+        assertThat(userAuthService.getById(registered.getId()).getSource()).isEqualTo(UserSourceEnum.IOS);
+        User loggedIn = userAuthService.loginOrRegister("13800138000", "strongPass123", "000007",
+                UserSourceEnum.ANDROID);
+        assertThat(loggedIn.getId())
                 .isEqualTo(registered.getId());
-        assertThatThrownBy(() -> userAuthService.loginOrRegister("13800138000", "wrongPass123", "000007"))
+        assertThat(loggedIn.getSource()).isEqualTo(UserSourceEnum.IOS);
+        assertThat(userAuthService.getById(registered.getId()).getSource()).isEqualTo(UserSourceEnum.IOS);
+        assertThatThrownBy(() -> userAuthService.loginOrRegister("13800138000", "wrongPass123", "000007",
+                UserSourceEnum.WEB))
                 .isInstanceOf(BusinessException.class);
         assertThatThrownBy(() -> userMapper.insert(new User("pettown0123456789abcdef01234567",
-                "13800138000", "unused"))).isInstanceOf(DuplicateKeyException.class);
+                "13800138000", "unused", UserSourceEnum.UNKNOWN))).isInstanceOf(DuplicateKeyException.class);
         assertThat(userMapper.selectCount()).isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @EnumSource(UserSourceEnum.class)
+    void persistsAndReadsEveryRegistrationSource(UserSourceEnum source) {
+        User registered = userAuthService.loginOrRegister("13900139000", "strongPass123", "000007", source);
+
+        assertThat(registered.getSource()).isEqualTo(source);
+        assertThat(userAuthService.getById(registered.getId()).getSource()).isEqualTo(source);
+    }
+
+    @Test
+    void defaultsMissingRegistrationSourceToUnknown() {
+        User registered = userAuthService.loginOrRegister("13900139000", "strongPass123", "000007", null);
+
+        assertThat(userAuthService.getById(registered.getId()).getSource()).isEqualTo(UserSourceEnum.UNKNOWN);
     }
 }

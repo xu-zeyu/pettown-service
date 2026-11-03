@@ -4,7 +4,7 @@ import com.pettown.business.verification.service.VerificationCodeService;
 import com.pettown.common.cache.Cache;
 import com.pettown.common.exception.BusinessException;
 import com.pettown.common.exception.ErrorCodeEnum;
-import com.pettown.common.verificationEnum.VerificationCodeTypeEnum;
+import com.pettown.common.commonEnum.VerificationCodeTypeEnum;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
