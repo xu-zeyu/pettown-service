@@ -1,13 +1,14 @@
 package com.pettown.admin.system.controller;
 
-import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.pettown.admin.auth.annotation.AdminCheckPermission;
 import com.pettown.admin.system.vo.PermissionResponse;
 import com.pettown.business.admin.service.AdminPermission;
+import com.pettown.business.admin.service.AdminService;
+import com.pettown.common.mybatis.PageParam;
 import com.pettown.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.Arrays;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,11 +19,19 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "管理后台权限点")
 @SecurityRequirement(name = "bearerAuth")
 public class AdminPermissionController {
+    private final AdminService service;
+
+    public AdminPermissionController(AdminService service) {
+        this.service = service;
+    }
+
     @GetMapping
-    @Operation(summary = "查询管理后台权限点", description = "需要 system:permission:read；返回由代码维护的权限编码与名称，不支持动态创建权限点")
-    @SaCheckPermission(type = "admin", value = "system:permission:read")
+    @Operation(summary = "查询管理后台权限点", description = "需要 system:permission:read；返回数据库目录中的内置及自定义权限编码与名称；目录维护接口需要 SUB_ADMIN")
+    @AdminCheckPermission(AdminPermission.PERMISSION_READ)
     public Result<List<PermissionResponse>> list() {
-        return Result.success(Arrays.stream(AdminPermission.values())
-                .map(permission -> new PermissionResponse(permission.code(), permission.title())).toList());
+        PageParam page = new PageParam();
+        page.setSize(-1);
+        return Result.success(service.listPermissions(page).getList().stream()
+                .map(permission -> new PermissionResponse(permission.getCode(), permission.getName())).toList());
     }
 }

@@ -59,7 +59,7 @@
 
 ## Boot 模块
 
-`pettown-boot/app`、`pettown-boot/admin`、`pettown-boot/miniapp` 是三个独立可运行的 Gradle 子工程。每个工程只依赖自己的客户端模块，启动类扫描自己的客户端包、实际使用的共享业务包和公共包；每个工程各有一份 `application.yml`、一个 `.env.example` 和日志配置。三个工程的接口装配测试使用独立 H2 数据库。App 只扫描宠物 Mapper，小程序只扫描用户 Mapper，Admin 只扫描后台业务 Mapper，避免装配其他客户端未使用的业务。Admin 初始化和启动见 [Admin 接口说明](admin-api.md)。
+`pettown-boot/app`、`pettown-boot/admin`、`pettown-boot/miniapp` 是三个独立可运行的 Gradle 子工程。每个工程只依赖自己的客户端模块，启动类扫描自己的客户端包、实际使用的共享业务包和公共包；每个工程各有一份 `application.yml`、一个 `.env.example` 和日志配置。三个工程的接口装配测试使用独立 H2 数据库。App 只扫描宠物 Mapper，小程序只扫描用户 Mapper，Admin 只扫描后台业务 Mapper，避免装配其他客户端未使用的业务。Admin 使用账号、角色、权限、角色权限四表，账号通过 `admin_account.role_id` 关联单个角色；不依赖账号角色中间表。初始化和启动见 [Admin 接口说明](admin-api.md)。
 
 ## 依赖方向
 

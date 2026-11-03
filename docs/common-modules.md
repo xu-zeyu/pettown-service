@@ -5,7 +5,7 @@
 | 模块 | 已提供能力 | 接入条件 |
 | --- | --- | --- |
 | `common-mybatis` | MyBatis-Plus 分页、排序、Join、`BaseMapperX` CRUD/批量操作、自动填充、基础实体与分页结果 | 三个 Boot 工程均已依赖；App 与小程序须配置数据库连接并先执行建表脚本。 |
-| `common-redis` | `CacheUtils` Redisson 缓存、Map 操作，兼容 `RedisCache` 字符串 API | 三个 Boot 工程均已依赖该模块；通过各自 `.env` 配置 Redis。小程序默认启用 Redisson，App/Admin 按需启用。 |
+| `common-redis` | `CacheUtils` Redisson 缓存、Map 操作，兼容 `RedisCache` 字符串 API | 三个 Boot 工程均已依赖该模块；通过各自 `.env` 配置 Redis。小程序默认启用 Redisson，App 按需启用，Admin 默认启用以缓存登录验证码。 |
 | `common-security` | Sa-Token 的 `user`、`admin` 独立账号空间及 401/403 异常响应 | 公共模块提供核心能力，HTTP Token 解析由小程序和 Admin Boot 引入 starter。Admin 的 RBAC、Redis 会话及初始化见 [Admin 接口说明](admin-api.md)。 |
 | `common-file` | `FileService` 的阿里云 OSS 上传下载实现 | 使用方依赖该模块，设置 `pettown.file.enabled=true` 及 `aliyun.oss.endpoint`、`access-key-id`、`access-key-secret`、`bucket-name`、`region`。密钥通过环境变量或部署配置传入。 |
 | `common-log` | `@Log` 操作日志、`X-Trace-Id` 请求追踪、滚动文件日志 | 三个 Boot 工程共用日志配置；默认写到 `logs/${spring.application.name}.log`，可通过 `logging.file.name` 改路径；`test` Profile 仅输出控制台。 |
@@ -73,14 +73,14 @@ MyBatis-Plus 固定为 `3.5.15`，Join 固定为参考项目的 `1.5.5`。本项
 
 ## 各环境连接配置
 
-三个 Boot 工程使用 `${变量名:默认值}` 从各自的 `.env` 读取配置。将目标工程的 `.env.example` 复制为同目录 `.env`，填写端口和需要的连接参数。`.env` 不进入 Git，也不会被打包进 JAR。`bootRun` 固定使用对应工程目录作为工作目录；部署时应从该服务的部署目录启动 JAR。系统环境变量的优先级高于 `.env`，可用于临时覆盖。文件采用 Java properties 兼容的 `KEY=value` 语法。Admin 的完整步骤见 [Admin 接口说明](admin-api.md)；原引用的 `run.md` 当前不存在。
+三个 Boot 工程使用 `${变量名:默认值}` 从各自的 `.env` 读取配置。将目标工程的 `.env.example` 复制为同目录 `.env`，填写端口和需要的连接参数。`.env` 不进入 Git，也不会被打包进 JAR。`bootRun` 固定使用对应工程目录作为工作目录；部署时应从该服务的部署目录启动 JAR。系统环境变量的优先级高于 `.env`，可用于临时覆盖。文件采用 Java properties 兼容的 `KEY=value` 语法。Admin 密码加短信验证码登录及完整步骤见 [Admin 接口说明](admin-api.md)；原引用的 `run.md` 当前不存在。
 
 ```bash
 cp -n pettown-boot/app/.env.example pettown-boot/app/.env
 ./gradlew :pettown-boot:app:bootRun
 ```
 
-App 与小程序须在对应 `.env` 填写有效数据库连接，小程序还须配置 Redis 以支持验证码。Admin 现已接入后台账号与 RBAC Mapper，默认启用数据源，须执行 [`sql/admin.sql`](sql/admin.sql) 并配置 MySQL、Redis；管理会话固定使用 RedisTemplate，不受 Redisson 开关影响。小程序的 `PETTOWN_REDIS_ENABLED` 默认 `true`，App/Admin 默认 `false`，需要缓存时设为 `true`。旧的 `pettown-boot/config/connection-secrets.yml` 不再被读取，迁移时请将其中的连接信息填入相应服务的 `.env`。应用只连接各自配置的数据库，不自动访问参考项目数据库。
+App 与小程序须在对应 `.env` 填写有效数据库连接，小程序还须配置 Redis 以支持验证码。Admin 现已接入后台账号与 RBAC Mapper，默认启用数据源，须执行 [`sql/admin.sql`](sql/admin.sql) 并配置 MySQL、Redis；管理会话固定使用 RedisTemplate，不受 Redisson 开关影响。小程序的 `PETTOWN_REDIS_ENABLED` 默认 `true`，Admin 默认 `true`，App 默认 `false`，需要缓存时设为 `true`。旧的 `pettown-boot/config/connection-secrets.yml` 不再被读取，迁移时请将其中的连接信息填入相应服务的 `.env`。应用只连接各自配置的数据库，不自动访问参考项目数据库。
 
 ## Redis 与参考模块对齐
 

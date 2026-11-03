@@ -1,9 +1,10 @@
 package com.pettown.admin.auth;
 
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.exception.NotPermissionException;
 import cn.dev33.satoken.stp.StpInterface;
+import com.pettown.admin.auth.annotation.AdminCheckPermission;
 import com.pettown.admin.auth.controller.AdminAuthController;
+import com.pettown.admin.auth.controller.AdminLoginController;
 import com.pettown.business.admin.service.AdminService;
 import com.pettown.common.security.config.PetTownToken;
 import jakarta.servlet.http.HttpServletRequest;
@@ -52,31 +53,34 @@ public class AdminSecurityConfiguration implements WebMvcConfigurer {
                 }
                 // 只放行真正的登录方法；其他新增接口默认要求登录及明确的权限声明。
                 boolean authController = method.getBeanType().equals(AdminAuthController.class);
+                boolean loginController = method.getBeanType().equals(AdminLoginController.class);
                 String name = method.getMethod().getName();
-                if (authController && name.equals("login")) {
+                if ((authController && name.equals("login")) || (loginController
+                        && Set.of("smsLogin", "createLoginCode").contains(name))) {
                     return true;
                 }
                 PetTownToken.ADMIN.checkLogin();
-                var account = service.getAccount(PetTownToken.ADMIN.getLoginIdAsLong());
+                var account = service.findAccount(PetTownToken.ADMIN.getLoginIdAsLong()).orElse(null);
                 var session = PetTownToken.ADMIN.getTokenSession(false);
-                if (!Boolean.TRUE.equals(account.getEnabled()) || session == null
+                if (account == null || !Boolean.TRUE.equals(account.getEnabled()) || session == null
                         || !String.valueOf(account.getSessionVersion()).equals(
                                 String.valueOf(session.get(AdminAuthController.SESSION_VERSION)))) {
                     PetTownToken.ADMIN.logout();
                     PetTownToken.ADMIN.checkLogin();
                 }
-                boolean selfService = authController && Set.of("me", "logout", "changePassword").contains(name);
+                boolean selfService = (authController && Set.of("me", "logout", "changePassword").contains(name))
+                        || (loginController && Set.of("self", "info").contains(name));
                 if (Boolean.TRUE.equals(account.getPasswordChangeRequired()) && !selfService) {
                     throw new NotPermissionException("请先修改初始密码", "admin");
                 }
-                if (authController && (selfService || name.equals("menus"))) {
+                if (selfService || (authController && name.equals("menus"))) {
                     return true;
                 }
-                SaCheckPermission permission = method.getMethodAnnotation(SaCheckPermission.class);
-                if (permission == null || !"admin".equals(permission.type()) || permission.value().length == 0) {
+                AdminCheckPermission permission = method.getMethodAnnotation(AdminCheckPermission.class);
+                if (permission == null) {
                     throw new NotPermissionException("接口未声明管理权限", "admin");
                 }
-                PetTownToken.ADMIN.checkPermissionAnd(permission.value());
+                PetTownToken.ADMIN.checkPermission(permission.value().code());
                 return true;
             }
         }).addPathPatterns("/api/admin/**");

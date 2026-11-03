@@ -30,10 +30,11 @@ public class AdminAuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "管理员账号密码登录", description = "公开接口；返回管理员 Token。初始账号或被重置密码的账号须先修改密码")
+    @Operation(summary = "管理员密码和短信验证码登录", description = "公开接口；username、password、smsCode 三项校验成功后返回管理员 Token 及账号信息。初始账号或被重置密码的账号须先修改密码")
     @Log("管理员登录")
     public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        var account = service.authenticate(request.username(), request.password());
+        var account = service.authenticateWithCode(request.username(), request.password(), request.smsCode());
+        service.recordLogin(account.getId());
         PetTownToken.ADMIN.login(account.getId());
         PetTownToken.ADMIN.getTokenSession().set(SESSION_VERSION, account.getSessionVersion());
         return Result.success(new LoginResponse("Bearer", PetTownToken.ADMIN.getTokenValue(),

@@ -43,7 +43,10 @@ class AdminOpenApiTests {
                 operations++;
             }
         }
-        assertThat(operations).isEqualTo(21);
+        assertThat(operations).isEqualTo(45);
+        assertThat(paths.path("/api/admin/login/sms").path("post").path("security").size()).isZero();
+        assertThat(paths.path("/api/admin/public/captcha/login/{name}").path("post").path("security").size()).isZero();
+        assertThat(paths.path("/api/admin/permission/batchSync").path("post").path("description").asText()).contains("SUB_ADMIN", "事务");
         assertThat(paths.path("/api/admin/auth/login").path("post").path("security").size()).isZero();
         assertThat(paths.path("/api/admin/system/accounts").path("get").path("security").get(0).has("bearerAuth")).isTrue();
     }
@@ -55,8 +58,19 @@ class AdminOpenApiTests {
         assertThat(schemas.path("CreateAccountRequest").path("properties").path("password").path("writeOnly").asBoolean()).isTrue();
         assertThat(schemas.path("CreateAccountRequest").path("properties").path("password").path("format").asText()).isEqualTo("password");
         assertThat(schemas.path("LoginResponse").path("properties").path("expiresIn").path("description").asText()).contains("秒");
+        assertThat(schemas.path("AccountResponse").path("properties").has("roleId")).isTrue();
+        assertThat(document.path("paths").path("/api/admin/system/accounts/{id}/role").path("put")
+                .path("description").asText()).contains("最多一个角色", "null");
+        assertThat(document.path("paths").path("/api/admin/system/accounts/{id}").path("delete")
+                .path("description").asText()).contains("system:account:delete", "保留角色");
         assertThat(schemas.path("AccountResponse").path("properties").has("passwordHash")).isFalse();
         assertThat(schemas.path("AccountResponse").path("properties").has("sessionVersion")).isFalse();
+        assertThat(schemas.path("AdminSmsLoginRequest").path("properties").path("password").path("writeOnly").asBoolean()).isTrue();
+        assertThat(schemas.path("AdminInfoResponse").path("properties").has("passwordHash")).isFalse();
+        for (String path : java.util.List.of("/api/admin/permission/page", "/api/admin/role/page")) {
+            var parameters = document.path("paths").path(path).path("get").path("parameters");
+            assertThat(parameters.findValuesAsText("name")).contains("page", "size").doesNotContain("sizeValid");
+        }
         var list = document.path("paths").path("/api/admin/system/accounts").path("get");
         assertThat(list.path("description").asText()).contains("system:account:read", "size=-1");
         assertThat(list.path("parameters").findValuesAsText("name")).contains("page", "size", "keyword", "enabled").doesNotContain("sizeValid");

@@ -5,6 +5,7 @@ import lombok.Getter;
 @Getter
 public enum VerificationCodeTypeEnum {
     LOGIN_REGISTER("login_register"),
+    ADMIN_LOGIN("admin_login"),
     RESET_PASSWORD("reset_password");
 
     private final String value;

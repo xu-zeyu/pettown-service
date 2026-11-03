@@ -1,5 +1,6 @@
 package com.pettown.admin.system.vo;
 
+import com.pettown.business.admin.service.AdminPermission;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,13 +14,13 @@ public record MenuResponse(
         @Schema(description = "子菜单；叶子节点为空数组") List<MenuResponse> children) {
     public static List<MenuResponse> visibleTo(Set<String> permissions) {
         List<MenuResponse> children = new ArrayList<>();
-        if (permissions.contains("system:account:read")) {
+        if (permissions.contains(AdminPermission.ACCOUNT_READ.code())) {
             children.add(new MenuResponse("accounts", "管理员", "/system/accounts", List.of()));
         }
-        if (permissions.contains("system:role:read")) {
+        if (permissions.contains(AdminPermission.ROLE_READ.code())) {
             children.add(new MenuResponse("roles", "角色", "/system/roles", List.of()));
         }
-        if (permissions.contains("system:permission:read")) {
+        if (permissions.contains(AdminPermission.PERMISSION_READ.code())) {
             children.add(new MenuResponse("permissions", "权限点", "/system/permissions", List.of()));
         }
         return children.isEmpty() ? List.of() : List.of(new MenuResponse("system", "系统管理", null, children));

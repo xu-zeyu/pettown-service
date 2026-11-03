@@ -13,7 +13,8 @@ public class AdminBootstrapConfiguration {
     @ConditionalOnProperty(prefix = "pettown.admin.bootstrap", name = "enabled", havingValue = "true")
     public ApplicationRunner initializeAdmin(AdminService service,
             @Value("${pettown.admin.bootstrap.username:}") String username,
-            @Value("${pettown.admin.bootstrap.password:}") String password) {
-        return args -> service.initializeSuperAdmin(username, password);
+            @Value("${pettown.admin.bootstrap.password:}") String password,
+            @Value("${pettown.admin.bootstrap.phone:}") String phone) {
+        return args -> service.initializeSuperAdmin(username, password, phone);
     }
 }

@@ -24,3 +24,15 @@ dependencies {
 tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
     workingDir = projectDir
 }
+
+tasks.processTestResources {
+    from(rootProject.file("docs/sql/admin.sql")) {
+        rename { "admin-deployment.sql" }
+    }
+    from(rootProject.file("docs/sql/admin-single-role.sql")) {
+        rename { "admin-single-role.sql" }
+    }
+    from(rootProject.file("docs/sql/admin-reference-alignment.sql")) {
+        rename { "admin-migration.sql" }
+    }
+}

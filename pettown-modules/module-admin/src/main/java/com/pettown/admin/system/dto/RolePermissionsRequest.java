@@ -5,5 +5,5 @@ import jakarta.validation.constraints.*;
 
 public record RolePermissionsRequest(
         @Schema(description = "权限编码列表；整体替换，空数组清空；仅支持权限目录中的编码，不支持通配符")
-        @NotNull @Size(max = 12) java.util.List<@NotBlank @Size(max = 80) String> permissions) {
+        @NotNull @Size(max = 1000) java.util.List<@NotBlank @Size(max = 80) String> permissions) {
 }

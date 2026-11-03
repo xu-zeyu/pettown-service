@@ -16,12 +16,13 @@ spring:
 
 pettown:
   redis:
-    enabled: ${PETTOWN_REDIS_ENABLED:false}
+    enabled: ${PETTOWN_REDIS_ENABLED:true}
   admin:
     bootstrap:
       enabled: ${PETTOWN_ADMIN_BOOTSTRAP_ENABLED:false}
       username: ${PETTOWN_ADMIN_BOOTSTRAP_USERNAME:}
       password: ${PETTOWN_ADMIN_BOOTSTRAP_PASSWORD:}
+      phone: ${PETTOWN_ADMIN_BOOTSTRAP_PHONE:}
 
 mybatis-plus:
   configuration:
