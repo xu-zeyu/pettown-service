@@ -38,6 +38,7 @@ Boot 工程、客户端模块 → 按需使用的 common 模块
 - `common` 模块不得依赖业务模块、客户端模块或 Boot；公共模块之间按实际需要声明单向依赖。
 - `module-business` 不得依赖客户端模块或 Boot；客户端模块之间不得相互依赖。
 - Boot 负责最终装配，其他层不得依赖 Boot。所有模块禁止循环依赖。
+- `pettown-modules` 是业务模块，生产代码只承载业务与客户端接口，不放置 Spring 装配配置类、拦截器注册或运行环境配置。各端的 `@Configuration`、`@Bean` 装配、专属鉴权拦截器及 `application*.yml` / `.env.example` 统一放入对应 Boot 工程；可复用的基础组件配置放入所属 `common` 模块。模块自身的 Gradle 脚本、Mapper 资源及隔离测试配置仍放在所属模块。
 - 只在有实际代码或资源时创建目录，不预建空的包、模块或占位实现。
 
 ## 分层与编码
@@ -75,7 +76,7 @@ Boot 工程、客户端模块 → 按需使用的 common 模块
 - 密码使用 BCrypt 哈希保存和校验；密码、密码哈希和验证码不得进入响应或日志。Token 仅通过明确的认证接口响应发放，不记录到日志；认证复用 `PetTownToken`，保持用户与管理员账号空间隔离。
 - App、小程序接口默认校验 `PetTownToken.USER`，Admin 默认校验 `PetTownToken.ADMIN`；App 宠物接口同样要求用户登录。三端只从 `Authorization: Bearer <token>` 请求头读取 Token，不接收 Cookie 或请求参数 Token；生产会话使用 RedisTemplate，App 与小程序共享用户会话时须连接相同 Redis。
 - 公开业务接口在具体方法上显式添加 `@SaIgnore`，并同步 OpenAPI 的公开语义；不得按方法名猜测是否放行，也不得整体放行 `/public/**` 或 `/auth/**`。框架路径仅按实际需要排除 `/error`、`/v3/api-docs` 及其子路径，新增接口默认受保护。
-- 通用 Sa-Token 上下文和 ASYNC/ERROR 内部分发处理放在 `common-security`，各端的路由规则与账号空间由本端配置装配；管理员状态、会话版本及权限规则留在 Admin，不能写入公共模块。首次请求必须鉴权，异步/错误内部分发不重复鉴权；`@SaIgnore` 不能代替受保护接口的权限声明。
+- 通用 Sa-Token 上下文和 ASYNC/ERROR 内部分发处理放在 `common-security`，各端的路由规则与账号空间由本端配置装配。管理员状态、会话版本及权限规则留在 Admin。首次请求必须鉴权，异步或错误内部分发不重复鉴权。需要具体权限的 Admin 接口使用原生 `@SaCheckPermission`，显式指定 `type = "admin"`。
 - 普通缓存需求在业务层注入 `common-core` 的 `Cache` 接口；确需 Redis Map 等专有能力时再使用 `CacheUtils`。运行时缓存使用 Redis，禁用或不可用时不得静默回退到内存实现。
 - 验证码保留现有契约：六位数字、五分钟 TTL、按用途和手机号隔离；消费通过 `Cache.compareAndDelete` 原子完成，禁止先读取再删除。生成接口不向客户端返回验证码。
 

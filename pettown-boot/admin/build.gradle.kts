@@ -34,4 +34,5 @@ tasks.processTestResources {
     from(rootProject.file("docs/sql/admin-reference-alignment.sql")) {
         rename { "admin-migration.sql" }
     }
+    from(rootProject.file("docs/sql/admin-test-data.sql"))
 }

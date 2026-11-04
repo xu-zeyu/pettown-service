@@ -20,14 +20,14 @@ class AdminMigrationTests {
                     + "VALUES (1, 'fixture_root', '测试账号', 'fixture-hash', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
             jdbc.update("INSERT INTO admin_role (id, code, name, created_time, updated_time) "
                     + "VALUES (1, 'fixture_role', '测试角色', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
-            jdbc.update("INSERT INTO admin_account_role (account_id, role_id) VALUES (1, 1)");
             jdbc.update("INSERT INTO admin_role_permission (role_id, permission_code) VALUES (1, 'legacy:read')");
             String longPermissionCode = "legacy:" + "a".repeat(60);
             jdbc.update("INSERT INTO admin_role_permission (role_id, permission_code) VALUES (1, ?)", longPermissionCode);
             new ResourceDatabasePopulator(new ClassPathResource("admin-migration.sql")).execute(database);
             assertThat(jdbc.queryForObject("SELECT password_hash FROM admin_account WHERE id=1", String.class)).isEqualTo("fixture-hash");
             assertThat(jdbc.queryForObject("SELECT deleted FROM admin_role WHERE id=1", Integer.class)).isZero();
-            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM admin_account_role", Integer.class)).isEqualTo(1);
+            assertThat(jdbc.queryForList("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='PUBLIC'", String.class))
+                    .containsExactlyInAnyOrder("ADMIN_ACCOUNT", "ADMIN_ROLE", "ADMIN_PERMISSION", "ADMIN_ROLE_PERMISSION");
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM admin_role_permission", Integer.class)).isEqualTo(2);
             assertThat(jdbc.queryForObject("SELECT name FROM admin_permission WHERE code=?", String.class, longPermissionCode)).hasSize(50);
             assertThat(jdbc.queryForList("SELECT code FROM admin_permission", String.class)).contains("SUB_ADMIN", "system:account:read", "legacy:read");

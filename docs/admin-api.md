@@ -1,10 +1,10 @@
 # Admin 登录与权限接口
 
-Admin 对齐 `jinHan-shop-admin-web` 的管理员认证、个人资料、角色、权限目录与批量同步功能，代码遵守本仓库 Controller / Service / Mapper 分层：
+Admin 参考 `jinHan-shop-admin-web` 的管理员认证、个人资料、角色、权限目录与批量同步功能，并采用本仓库的 Controller / Service / Mapper 分层。
 
-- `module-admin/com.pettown.admin.auth`：登录入口、登录 DTO、权限注解；`config`：管理员鉴权装配与权限提供器；`interceptor`：账号状态、会话版本与权限校验；`system/controller`、`system/dto`、`system/vo`：账号、角色、权限接口及显式响应转换。
-- `module-business/com.pettown.business.admin`：实体、Mapper、Service 接口与实现；不依赖客户端 DTO 或 HTTP 类型。
-- `pettown-boot/admin`：启动、有限范围扫描、环境变量、初始管理员及 OpenAPI 装配；额外扫描验证码业务，不扫描其他客户端业务。
+- `module-admin/com.pettown.admin.auth` 提供登录入口和登录 DTO。`system/controller`、`system/dto`、`system/vo` 提供账号、角色、权限接口及显式响应转换。
+- `module-business/com.pettown.business.admin` 提供实体、Mapper、Service 接口与实现。
+- `pettown-boot/admin` 负责启动、组件扫描、环境变量、初始管理员及 OpenAPI 装配。`config/SaTokenConfigure` 注册拦截器，`interceptor/AdminSessionInterceptor` 在 Sa-Token 注解校验之前校验管理员会话，`config/StpInterfaceImpl` 通过 Service 提供管理员角色和权限。
 
 原有 `auth` 和 `system` 接口保留。**原有 `POST /api/admin/auth/login` 现在也必须提交 `smsCode`**，不能绕过参考项目要求的密码加验证码认证。原有初始账号改密、账号停用与会话版本控制继续有效；账号改为通过 `admin_account.role_id` 关联单个角色。原有账号创建/资料修改接口支持可选 `phone`，修改手机号使旧会话失效。
 
@@ -37,13 +37,15 @@ Admin 对齐 `jinHan-shop-admin-web` 的管理员认证、个人资料、角色�
 
 ## 认证与授权
 
-只有两个登录入口及验证码生成入口通过方法上的 `@SaIgnore` 公开。其余接口默认要求管理员登录，不能仅凭 `/public` 路径命名放行；`/error`、`/v3/api-docs` 及其子路径由配置排除。`self`、`info` 需要管理员登录。新增管理员、角色、权限维护及查询接口均要求 `SUB_ADMIN`；参考代码对部分管理操作只检查登录，本项目保留明确的管理权限检查。原有 `/system` 接口仍按各自 `system:*` 权限检查。
+两个登录入口及验证码入口通过方法上的 `@SaIgnore` 公开。框架路径 `/error`、`/v3/api-docs` 及其子路径由配置排除。其余接口先验证管理员会话和账号状态，再由 Sa-Token 执行 `@SaCheckPermission` 声明的权限检查，注解使用 `type = "admin"`。未声明具体权限的受保护接口按会话规则放行。创建管理员、角色管理和权限管理接口要求 `SUB_ADMIN`，`/system` 接口沿用各自的 `system:` 前缀权限编码。
+
+`super_admin=1` 的启用账号可以通过所有接口权限检查，Sa-Token 在服务端使用 `*` 表示该权限。超级管理员的会话、首次改密和业务操作仍须通过相应校验，响应中的权限列表返回具体编码。
 
 Token 是 Sa-Token 不透明 Token，使用 `PetTownToken.ADMIN`，与用户账号空间隔离，通过 `Authorization: Bearer <token>` 传递。生产会话始终使用 RedisTemplate，默认有效期 7200 秒；不接收 Cookie 或请求体 Token，不记录密码、验证码和 Token。
 
-每次受保护请求重新读取账号状态和权限。禁用、重置密码、本人改密使旧 Token 失效；重新启用不会恢复旧 Token。退出只注销当前 Token。初始账号和旧账号管理接口创建/重置的账号须先通过 `/api/admin/auth/password` 修改密码；此前只能访问个人信息、改密和退出接口。`/api/admin/create` 按参考行为创建可直接使用的账号，直接在 `admin_account.role_id` 保存关联角色；一个账号最多一个角色。`info.role` 返回该账号关联的已启用角色，无角色或角色已禁用/删除时为 null，`self.authorities` 返回该角色的有效权限。
+每次受保护请求重新读取账号状态和会话版本，需要权限时实时读取角色授权。禁用、重置密码、本人改密使旧 Token 失效，重新启用不会恢复旧 Token。退出只注销当前 Token。初始账号和旧账号管理接口创建或重置的账号须先通过 `/api/admin/auth/password` 修改密码，此前可访问个人信息、改密和退出接口。`/api/admin/create` 按参考行为创建可直接使用的账号，一个账号最多关联一个角色，关系保存在 `admin_account.role_id`。`info.role` 返回关联的已启用角色，无角色或角色已禁用或删除时为 null。`self.authorities` 返回有效权限编码。
 
-内置权限由 `AdminPermission` 枚举与 SQL 种子维护，包括 `system:*` 与 `SUB_ADMIN`；前端可通过数据库目录补充自定义编码。编码唯一，不支持通配符；内置编码不可改名或删除。批量同步只新增缺失编码，已有名称不覆盖，不删除旧项，同批重复编码只创建一次。角色权限按 ID 整组替换，空数组清空，重复 ID 去重。修改自定义编码时同步迁移关系，删除时清理关系。授权写操作在事务中串行校验，不允许授予超出自身范围的权限或通过角色修改提升自身权限。
+`AdminPermissionCodes` 声明内置编码，包括 `system:` 前缀编码和 `SUB_ADMIN`。权限目录支持自定义编码，编码唯一且不支持通配符，内置编码不可改名或删除。批量同步只新增缺失编码，已有名称不覆盖，不删除旧项，同批重复编码只创建一次。角色权限按 ID 整组替换，空数组清空，重复 ID 去重。修改自定义编码时同步迁移关系，删除时清理关系。普通管理员只能修改或删除自己持有的权限，改码时还须持有目标编码，避免绕过角色授权限制。授权写操作在事务中串行校验。
 
 菜单仍通过 `/api/admin/auth/menus` 根据系统读权限生成；参考项目未实现动态菜单树接口。自定义前端菜单和按钮可以使用 `self.authorities`，菜单显示不能代替后端授权。
 
@@ -57,23 +59,31 @@ Token 是 Sa-Token 不透明 Token，使用 `PetTownToken.ADMIN`，与用户账�
 - `DELETE /api/admin/system/accounts/{id}` 需要 `system:account:delete`，删除账号并注销全部会话；保留共享角色、角色权限及使用该角色的其他账号。不能删除自身或超级管理员，不能删除权限超出自身范围的账号。账号即使被直接从数据库移除，其旧 Token 也会返回 401。
 - 两套角色删除接口统一在 Service 事务中清空关联账号的 `role_id`，删除角色权限关系并逻辑删除角色；账号、密码及个人资料保留。角色撤权后，账号仍可登录查看个人信息，但不再拥有该角色的业务权限。
 
-旧版五表部署也可以执行同一个单角色迁移脚本：执行前备份并暂停 Admin 写入，脚本在修改结构前检查多角色、孤立关联和新旧 role_id 冲突，发现问题会中止并保留旧表。校验通过后拷贝单角色关联，再移除旧关联表及其中的反向外键；不自动选择最小角色，也不删除账号。MySQL DDL 存在隐式提交，迁移不声称可通过一个事务整体回滚。
-
 ## 验证码与短信投递边界
 
-验证码复用 `VerificationCodeService`：六位数字、五分钟 TTL，使用独立用途 `admin_login` 和手机号组成 Redis Key，与小程序登录/重置密码隔离。密码校验通过后使用 `Cache.compareAndDelete` 原子消费，错误验证码不删除正确值，成功后不可重放。账号须启用且有有效手机号。
+验证码复用 `VerificationCodeService`：六位数字、五分钟 TTL，使用独立用途 `admin_login` 和手机号组成 Redis Key，与小程序登录/重置密码隔离。`POST /api/admin/auth/verification` 按手机号生成时也只接受 `type=ADMIN_LOGIN`。密码校验通过后使用 `Cache.compareAndDelete` 原子消费，错误验证码不删除正确值，成功后不可重放。按用户名生成及登录时，账号须启用且有有效手机号。
 
 参考项目把验证码直接返回给客户端，而且没有实际短信发送。本仓库规范禁止返回验证码，因此生成接口只缓存并返回成功，**目前尚未接入短信投递服务，不能据此声称已可向真实手机号发送短信**。上线短信登录前须接入发送服务，在服务端生成后投递；不得通过响应、日志或内存回退提供验证码。无手机号的账号可保留，但无法执行短信登录。
 
 ## 部署与迁移
 
-当前仓库未包含本节引用的 `docs/sql/admin.sql`、`admin-single-role.sql`、`admin-reference-alignment.sql`。以下是原约定的部署流程，须先补齐并核对 SQL，不能将这些链接视为现成脚本。Admin 的 7 项迁移测试也因缺少对应资源失败；本次 Sa-Token 改动未重建或执行迁移 SQL。
+当前仓库缺少本节所列的四个部署脚本。以下流程须先补齐并核对 SQL，应用只连接已配置的数据库。
 
-全新数据库执行 [`sql/admin.sql`](sql/admin.sql)，只创建 `admin_account`、`admin_role`、`admin_permission`、`admin_role_permission` 四表。已有这四张表时，执行 [`sql/admin-single-role.sql`](sql/admin-single-role.sql)，自动补充缺失的 `role_id` 字段、查询索引与删除账号权限。若是缺少手机号、头像等字段的最早版本，先执行一次 [`sql/admin-reference-alignment.sql`](sql/admin-reference-alignment.sql)，再执行单角色迁移。迁移不会推断已丢失的角色绑定，若旧关联表已被手动删除且账号没有 role_id，须通过设置角色接口重新关联。脚本不由应用自动执行；测试 schema 描述当前四表结构，部署脚本缺失时无法核对二者一致性。旧账号须通过 `/system/accounts/{id}` 资料修改接口补充正确手机号，超级管理员手机号由运维补充；不会读取参考工程数据库或导入其账号。
+全新数据库执行 `docs/sql/admin.sql`，创建四表并写入内置权限目录。已有四表的数据库执行 `docs/sql/admin-single-role.sql`，添加缺失的 `role_id`、索引及内置权限。执行迁移前备份并暂停 Admin 写入，存在无效的角色 ID 时先修正关联再重跑。MySQL DDL 会隐式提交，无法通过一个事务整体回滚。缺少手机号、头像等字段的更早四表版本，先执行一次 `docs/sql/admin-reference-alignment.sql`，再执行单角色迁移。
+
+测试库在建表或迁移后，先用 `docs/sql/admin-test-data.sql` 创建存储过程，再用下列 `CALL` 传入账号、手机号和 BCrypt 哈希。过程通过自增 ID 创建启用的超管，跳过该超管的首次改密。重复调用保留已有账号资料和角色授权。同名账号存在但不是启用的超级管理员时会中止。
+
+```sql
+CALL pettown_seed_admin_test_data('admin', '<测试手机号>', '<60 字符的 BCrypt 哈希>');
+-- 完成测试数据初始化后，可移除种子过程。
+DROP PROCEDURE pettown_seed_admin_test_data;
+```
+
+脚本同时生成只读、普通管理、账号停用、角色停用和未分配角色的 `fixture_admin_*` 样例账号。样例账号不配置手机号，不能直接登录；如需做登录测试，先为启用的样例账号配置独立测试手机号、重置密码，并按首次登录流程改密。脚本由运维或开发人员手工执行，应用不会自动运行这些 SQL。
 
 复制 `pettown-boot/admin/.env.example` 为同目录 `.env`，配置本服务 MySQL、Redis。管理验证码需要 Redisson，`PETTOWN_REDIS_ENABLED` 默认 `true`；关闭后验证码调用明确失败，不回退到内存。RedisTemplate 会话不受该开关影响。
 
-首次初始化设置 `PETTOWN_ADMIN_BOOTSTRAP_ENABLED=true`，填写 `PETTOWN_ADMIN_BOOTSTRAP_USERNAME`、`PETTOWN_ADMIN_BOOTSTRAP_PASSWORD` 和 `PETTOWN_ADMIN_BOOTSTRAP_PHONE`。初始化只在 ID=1 账号不存在时创建，不覆盖现有账号。初始化后关闭开关并移除初始密码。初始账号首次登录后需改密并重新登录。
+未通过 SQL 创建超管时，可设置 `PETTOWN_ADMIN_BOOTSTRAP_ENABLED=true` 并填写 `PETTOWN_ADMIN_BOOTSTRAP_USERNAME`、`PETTOWN_ADMIN_BOOTSTRAP_PASSWORD` 和 `PETTOWN_ADMIN_BOOTSTRAP_PHONE`。只在没有超级管理员时创建，已有账号不会被覆盖，ID=1 被占用时使用自增 ID。初始化后关闭开关并移除初始密码。由启动配置创建的初始账号首次登录后需改密并重新登录。
 
 ```bash
 ./gradlew :pettown-boot:admin:bootRun
@@ -89,4 +99,4 @@ Token 是 Sa-Token 不透明 Token，使用 `PetTownToken.ADMIN`，与用户账�
 
 HTTP 集成测试使用 H2 MySQL 模式、Mock 缓存和仅测试使用的 Sa-Token 内存 DAO，覆盖四表结构、单角色替换/清空、独立删除账号/角色、验证码隔离/一次性消费、动态权限、授权替换/清空、删除/改名生效、账号会话撤销及真实 `/v3/api-docs` 输出。未调用真实 MySQL、Redis、短信服务，也未进行 Apifox 客户端导入验证。
 
-单角色迁移测试原设计使用 H2 验证前置检查与数据复制 SQL；当前因 SQL 文件缺失尚未通过。MySQL 存储过程、DDL 和真实业务数据库也未执行验证。
+建表、迁移和种子测试依赖本节列出的部署 SQL。脚本缺失时无法验证对应迁移及种子行为。存储过程的 MySQL 原生执行需要另行验证。

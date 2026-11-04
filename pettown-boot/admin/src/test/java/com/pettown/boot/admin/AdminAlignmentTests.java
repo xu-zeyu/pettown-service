@@ -5,12 +5,16 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import cn.dev33.satoken.SaManager;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.dao.SaTokenDao;
 import cn.dev33.satoken.dao.SaTokenDaoDefaultImpl;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pettown.business.admin.entity.AdminAccount;
+import com.pettown.business.admin.entity.AdminPermissionRecord;
 import com.pettown.business.admin.mapper.AdminAccountMapper;
+import com.pettown.business.admin.mapper.AdminPermissionMapper;
 import com.pettown.business.admin.service.AdminService;
 import com.pettown.common.cache.Cache;
 import com.pettown.common.security.config.PetTownToken;
@@ -33,6 +37,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.transaction.annotation.Transactional;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -49,6 +54,7 @@ class AdminAlignmentTests {
     @Autowired private ObjectMapper json;
     @Autowired private AdminService service;
     @Autowired private AdminAccountMapper accounts;
+    @Autowired private AdminPermissionMapper permissions;
     @Autowired private SaTokenDao tokenDao;
     @MockitoBean private Cache cache;
     private final Map<String, Object> codes = new ConcurrentHashMap<>();
@@ -66,23 +72,90 @@ class AdminAlignmentTests {
         com.pettown.common.result.Result<String> protectedEndpoint() {
             return com.pettown.common.result.Result.success("ok");
         }
+
+        @org.springframework.web.bind.annotation.GetMapping("/api/admin/future-permission-probe")
+        @SaCheckPermission(value = "future:unregistered:permission", type = "admin")
+        com.pettown.common.result.Result<String> futurePermission() {
+            return com.pettown.common.result.Result.success("ok");
+        }
     }
 
     @Test
-    void protectsNewEndpointsAndRequiresExplicitPermissionsEvenForPublicNamedPaths() throws Exception {
+    void requiresAdminSessionByDefaultAndChecksDeclaredPermissionsThroughSaToken() throws Exception {
         call("GET", "/public/security-probe", null, null, 401);
-        call("GET", "/public/security-probe", rootToken, null, 403);
+        call("GET", "/public/security-probe", rootToken, null, 200);
+        call("GET", "/future-permission-probe", rootToken, null, 200);
+        var role = service.createNamedRole(1L, "普通只读管理员", null);
+        service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
+        service.createAdmin(1L, "fixture_probe", PASSWORD, "13800000002", null, role.getId());
+        String staffToken = passwordLogin("fixture_probe");
+        call("GET", "/public/security-probe", staffToken, null, 200);
+        call("GET", "/future-permission-probe", staffToken, null, 403);
+        call("GET", "/system/accounts", staffToken, null, 200);
         String userToken = PetTownToken.USER.createLoginSession("fixture-user");
         call("GET", "/self", userToken, null, 401);
+        call("GET", "/system/accounts", userToken, null, 401);
         mvc.perform(MockMvcRequestBuilders.get("/security-probe")).andExpect(
                 org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isUnauthorized());
         mvc.perform(MockMvcRequestBuilders.get("/security-probe").header("Authorization", "Bearer " + rootToken))
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isForbidden());
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
         mvc.perform(MockMvcRequestBuilders.get("/api/admin/self").param("Authorization", "Bearer " + rootToken))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isUnauthorized());
         mvc.perform(MockMvcRequestBuilders.get("/api/admin/self")
                         .cookie(new jakarta.servlet.http.Cookie("Authorization", "Bearer " + rootToken)))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isUnauthorized());
+    }
+
+    @Test
+    @Transactional
+    void superAdminPermissionsDoNotDependOnRolesOrThePermissionCatalog() throws Exception {
+        assertThat(service.accountRoleIds(1L)).isEmpty();
+        permissions.delete(new LambdaQueryWrapper<>());
+        assertThat(permissions.selectCount(null)).isZero();
+        call("GET", "/system/accounts", rootToken, null, 200);
+        call("GET", "/future-permission-probe", rootToken, null, 200);
+        call("GET", "/public/security-probe", rootToken, null, 200);
+    }
+
+    @Test
+    void superAdminStillRequiresEnabledAccountCurrentSessionAndInitialPasswordChange() throws Exception {
+        AdminAccount root = service.getAccount(1L);
+        root.setPasswordChangeRequired(true);
+        accounts.updateById(root);
+        call("GET", "/future-permission-probe", rootToken, null, 403);
+        call("GET", "/self", rootToken, null, 200);
+        root.setPasswordChangeRequired(false);
+        root.setEnabled(false);
+        accounts.updateById(root);
+        call("GET", "/future-permission-probe", rootToken, null, 401);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.createNamedRole(1L, "禁用超管", null))
+                .isInstanceOf(com.pettown.common.exception.BusinessException.class);
+        root.setEnabled(true);
+        accounts.updateById(root);
+        String freshToken = passwordLogin("fixture_root");
+        root.setSessionVersion(root.getSessionVersion() + 1);
+        accounts.updateById(root);
+        call("GET", "/future-permission-probe", freshToken, null, 401);
+        String removedToken = passwordLogin("fixture_root");
+        accounts.deleteById(1L);
+        call("GET", "/future-permission-probe", removedToken, null, 401);
+    }
+
+    @Test
+    void initializesAndAuthorizesSuperAdminWhenIdOneBelongsToAnOrdinaryAccount() throws Exception {
+        AdminAccount ordinary = service.getAccount(1L);
+        ordinary.setUsername("fixture_existing");
+        ordinary.setSuperAdmin(false);
+        accounts.updateById(ordinary);
+        service.initializeSuperAdmin("fixture_new_root", INITIAL_PASSWORD, "13800000003");
+        AdminAccount root = accounts.selectOne(AdminAccount::getUsername, "fixture_new_root");
+        assertThat(root.getId()).isNotEqualTo(1L);
+        assertThat(service.getAccount(1L).getUsername()).isEqualTo("fixture_existing");
+        service.changePassword(root.getId(), INITIAL_PASSWORD, PASSWORD);
+        service.createNamedRole(root.getId(), "非固定 ID 超管创建的角色", null);
+        call("GET", "/permission/list", passwordLogin("fixture_new_root"), null, 200);
+        service.initializeSuperAdmin("fixture_ignored", INITIAL_PASSWORD, "13800000004");
+        assertThat(accounts.selectCount(AdminAccount::getSuperAdmin, true)).isEqualTo(1);
     }
 
     @BeforeEach
@@ -110,6 +183,8 @@ class AdminAlignmentTests {
         assertThat(code).matches("[0-9]{6}");
         verify(cache).set(eq(key), eq(code), eq(Duration.ofMinutes(5)));
         codes.put("pettown:verification-code:login_register:13800000000", "654321");
+        call("POST", "/auth/verification", null, Map.of("phone", "13800000000", "type", "LOGIN_REGISTER"), 400);
+        assertThat(codes).containsEntry("pettown:verification-code:login_register:13800000000", "654321");
         call("POST", "/login/sms", null,
                 Map.of("username", "fixture_staff", "password", "Wrong-Fixture-Password", "smsCode", code), 400);
         assertThat(codes.get(key)).isEqualTo(code);
@@ -195,6 +270,35 @@ class AdminAlignmentTests {
     }
 
     @Test
+    @Transactional
+    void permissionCatalogChangesCannotExpandADelegatesAuthority() throws Exception {
+        service.createPermission(1L, "本人权限", "own:read");
+        service.createPermission(1L, "他人权限", "foreign:write");
+        long ownPermissionId = findPermission("own:read").path("id").asLong();
+        long foreignPermissionId = findPermission("foreign:write").path("id").asLong();
+        var role = service.createNamedRole(1L, "权限目录有限管理角色", null);
+        service.replaceRolePermissions(1L, role.getId(), List.of("SUB_ADMIN", "own:read"));
+        service.createAdmin(1L, "fixture_catalog_delegate", PASSWORD, "13800000006", null, role.getId());
+        String token = passwordLogin("fixture_catalog_delegate");
+
+        call("DELETE", "/permission/" + foreignPermissionId, token, null, 400);
+        assertThat(service.getPermission(foreignPermissionId).getCode()).isEqualTo("foreign:write");
+        call("POST", "/permission/update", token,
+                Map.of("id", ownPermissionId, "code", "foreign:new"), 400);
+        assertThat(service.getPermission(ownPermissionId).getCode()).isEqualTo("own:read");
+
+        // 内置目录缺失时仍不能把已获授的自定义编码改成新的后端权限。
+        permissions.delete(new LambdaQueryWrapper<AdminPermissionRecord>()
+                .eq(AdminPermissionRecord::getCode, "system:account:read"));
+        call("POST", "/permission/update", token,
+                Map.of("id", ownPermissionId, "code", "system:account:read"), 400);
+        assertThat(service.getPermission(ownPermissionId).getCode()).isEqualTo("own:read");
+        assertThat(service.rolePermissions(role.getId())).containsExactly("SUB_ADMIN", "own:read");
+        assertThat(authorities(token)).containsExactly("SUB_ADMIN", "own:read");
+        call("GET", "/system/accounts", token, null, 403);
+    }
+
+    @Test
     void rollsBackTheEntirePermissionBatchWhenALaterItemIsInvalid() throws Exception {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.syncPermissions(1L, List.of(
                 new AdminService.PermissionDefinition("合法项", "batch:valid"),
@@ -228,6 +332,36 @@ class AdminAlignmentTests {
         assertThat(service.getAccount(staff.getId()).getRoleId()).isEqualTo(roleA.getId());
         call("PUT", "/system/accounts/" + staff.getId() + "/roles", rootToken, Map.of("roleIds", List.of()), 200);
         assertThat(service.getAccount(staff.getId()).getRoleId()).isNull();
+    }
+
+    @Test
+    void roleAndPermissionChangesImmediatelyAffectAnExistingToken() throws Exception {
+        var role = service.createRole(1L, "fixture_live_role", "动态权限角色");
+        service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
+        var staff = service.createAdmin(1L, "fixture_live_access", PASSWORD, "13800000005", null, role.getId());
+        String token = passwordLogin("fixture_live_access");
+        call("GET", "/system/accounts", token, null, 200);
+
+        service.updateRole(1L, role.getId(), role.getName(), false);
+        assertThat(service.getAccount(staff.getId()).getRoleId()).isEqualTo(role.getId());
+        assertThat(authorities(token)).isEmpty();
+        assertThat(call("GET", "/info", token, null, 200).path("data").path("role").isNull()).isTrue();
+        call("GET", "/system/accounts", token, null, 403);
+
+        service.updateRole(1L, role.getId(), role.getName(), true);
+        call("GET", "/system/accounts", token, null, 200);
+        service.replaceRolePermissions(1L, role.getId(), List.of());
+        call("GET", "/system/accounts", token, null, 403);
+        service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
+        call("GET", "/system/accounts", token, null, 200);
+
+        call("PUT", "/system/accounts/" + staff.getId() + "/role", rootToken, Map.of(), 200);
+        call("GET", "/system/accounts", token, null, 403);
+        service.assignAccountRole(1L, staff.getId(), role.getId());
+        call("GET", "/system/accounts", token, null, 200);
+        service.deleteRole(1L, role.getId());
+        call("GET", "/system/accounts", token, null, 403);
+        call("GET", "/self", token, null, 200);
     }
 
     @Test

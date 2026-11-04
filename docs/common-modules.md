@@ -26,13 +26,13 @@
 | --- | --- | --- |
 | App | `PetTownToken.USER`；全部 `/api/pets` 及详情、创建接口需要登录 | 当前没有公开业务接口，也未新增 App 登录入口 |
 | 小程序 | `PetTownToken.USER`；`/api/miniapp/user/me` 及新增接口默认需要登录 | `POST /api/miniapp/auth/login`、`POST /api/miniapp/verification/code` |
-| Admin | `PetTownToken.ADMIN`；继续校验账号启用状态、会话版本、初始改密及管理权限 | `POST /api/admin/auth/login`、`POST /api/admin/login/sms`、`POST /api/admin/public/captcha/login/{name}` |
+| Admin | `PetTownToken.ADMIN` 校验会话、账号状态及初始改密，Sa-Token 原生注解校验声明的接口权限 | `POST /api/admin/auth/login`、`POST /api/admin/login/sms`、`POST /api/admin/public/captcha/login/{name}`、`POST /api/admin/auth/verification` |
 
 三端只接受 `Authorization: Bearer <token>`，不读取 Cookie、请求体或 query 中的 Token。App 与小程序使用相同用户账号空间，配置相同 Redis 实例和数据库后，可使用小程序登录接口签发的用户 Token 调用 App；管理员 Token 不能调用用户接口，用户 Token 也不能调用 Admin。App 和小程序默认有效期为 2592000 秒（`PETTOWN_TOKEN_TIMEOUT`），同账号新登录替换旧会话；Admin 保留 7200 秒及多终端独立 Token 的既有配置。
 
 三端生产会话均使用 RedisTemplate，与 `PETTOWN_REDIS_ENABLED` 控制的 Redisson 业务缓存独立；关闭该开关不会禁用会话 Redis，也不会回退到内存。App 从原来的匿名宠物接口改为必须登录，部署时须配置可用 Redis；小程序从内存会话切换为 Redis 后，原有内存 Token 不会迁移，用户需重新登录。测试 Profile 排除 Redis DAO，使用隔离的测试存储，不连接真实 Redis。
 
-App、小程序的拦截器注册位于各自 Boot 的 `config`；Admin 的注册与权限拦截分别位于 `module-admin/com.pettown.admin.config`、`interceptor`。公共模块不依赖任何客户端或管理员业务。新增公开方法时添加 `@SaIgnore` 并核对 OpenAPI；新增受保护方法保持默认拦截，Admin 管理接口还须声明 `@AdminCheckPermission`。使用 Sa-Token 原生登录/权限注解时，须显式指定对应 `type = "user"` 或 `type = "admin"`，避免落到默认账号空间。
+三端在各自 Boot 的 `config` 注册拦截器，复用公共的 Sa-Token 分发组件。Admin 先校验账号和会话，再由 Sa-Token 执行管理接口上的 `@SaCheckPermission`。新增公开方法时添加 `@SaIgnore` 并核对 OpenAPI。新增受保护方法保持默认登录校验，需要具体权限的 Admin 管理接口使用 `@SaCheckPermission` 声明。使用 Sa-Token 原生登录或权限注解时，须显式指定对应 `type = "user"` 或 `type = "admin"`。
 
 三端 OpenAPI 地址分别为默认端口 8080 / 8081 / 8082 的 `/v3/api-docs`。App 文档仅包含既有 `/api/pets` 路径并声明用户 Bearer 认证。自动化测试验证实际 OpenAPI 输出，不代表已完成 Apifox 客户端导入。
 
@@ -98,7 +98,7 @@ cp -n pettown-boot/app/.env.example pettown-boot/app/.env
 ./gradlew :pettown-boot:app:bootRun
 ```
 
-App 与小程序须在对应 `.env` 填写有效数据库连接；三端均须配置 Redis 以支持登录会话，小程序和 Admin 还通过 Redisson 缓存验证码。Admin 现已接入后台账号与 RBAC Mapper，默认启用数据源，须准备建表/迁移 SQL 并配置 MySQL、Redis（原引用的 `docs/sql/admin.sql` 等脚本当前缺失，见 [Admin 部署说明](admin-api.md#部署与迁移)）；三端会话固定使用 RedisTemplate，不受 Redisson 开关影响。小程序的 `PETTOWN_REDIS_ENABLED` 默认 `true`，Admin 默认 `true`，App 默认 `false`，需要缓存时设为 `true`。旧的 `pettown-boot/config/connection-secrets.yml` 不再被读取，迁移时请将其中的连接信息填入相应服务的 `.env`。应用只连接各自配置的数据库，不自动访问参考项目数据库。
+App 与小程序须在对应 `.env` 填写有效数据库连接。三端均须配置 Redis 以支持登录会话，小程序和 Admin 还通过 Redisson 缓存验证码。Admin 默认启用数据源，启动前需要准备四表结构及 MySQL、Redis 配置。当前仓库缺少 Admin 的部署 SQL，具体流程见 [Admin 部署说明](admin-api.md#部署与迁移)。三端会话固定使用 RedisTemplate，不受 Redisson 开关影响。小程序的 `PETTOWN_REDIS_ENABLED` 默认 `true`，Admin 默认 `true`，App 默认 `false`，需要缓存时设为 `true`。旧的 `pettown-boot/config/connection-secrets.yml` 不再被读取，迁移时请将其中的连接信息填入相应服务的 `.env`。应用只连接各自配置的数据库。
 
 ## Redis 与参考模块对齐
 

@@ -19,18 +19,16 @@ CREATE TABLE IF NOT EXISTS admin_role (
     created_time TIMESTAMP NOT NULL,
     updated_time TIMESTAMP NOT NULL
 );
-CREATE TABLE IF NOT EXISTS admin_account_role (
-    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    account_id BIGINT NOT NULL,
-    role_id BIGINT NOT NULL,
-    CONSTRAINT uk_admin_account_role UNIQUE (account_id, role_id),
-    CONSTRAINT fk_admin_account_role_account FOREIGN KEY (account_id) REFERENCES admin_account(id),
-    CONSTRAINT fk_admin_account_role_role FOREIGN KEY (role_id) REFERENCES admin_role(id)
-);
 CREATE TABLE IF NOT EXISTS admin_role_permission (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     role_id BIGINT NOT NULL,
     permission_code VARCHAR(80) NOT NULL,
     CONSTRAINT uk_admin_role_permission UNIQUE (role_id, permission_code),
     CONSTRAINT fk_admin_role_permission_role FOREIGN KEY (role_id) REFERENCES admin_role(id)
+);
+
+CREATE TABLE IF NOT EXISTS admin_permission (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    code VARCHAR(80) NOT NULL UNIQUE
 );

@@ -48,6 +48,9 @@ class AdminOpenApiTests {
         assertThat(paths.path("/api/admin/public/captcha/login/{name}").path("post").path("security").size()).isZero();
         assertThat(paths.path("/api/admin/permission/batchSync").path("post").path("description").asText()).contains("SUB_ADMIN", "事务");
         assertThat(paths.path("/api/admin/auth/login").path("post").path("security").size()).isZero();
+        JsonNode verification = paths.path("/api/admin/auth/verification").path("post");
+        assertThat(verification.path("security").size()).isZero();
+        assertThat(verification.path("description").asText()).contains("只接受 ADMIN_LOGIN");
         assertThat(paths.path("/api/admin/system/accounts").path("get").path("security").get(0).has("bearerAuth")).isTrue();
     }
 
@@ -66,6 +69,8 @@ class AdminOpenApiTests {
         assertThat(schemas.path("AccountResponse").path("properties").has("passwordHash")).isFalse();
         assertThat(schemas.path("AccountResponse").path("properties").has("sessionVersion")).isFalse();
         assertThat(schemas.path("AdminSmsLoginRequest").path("properties").path("password").path("writeOnly").asBoolean()).isTrue();
+        assertThat(schemas.path("VerificationCodeRequest").path("properties").path("type").path("enum"))
+                .extracting(JsonNode::asText).containsExactly("ADMIN_LOGIN");
         assertThat(schemas.path("AdminInfoResponse").path("properties").has("passwordHash")).isFalse();
         for (String path : java.util.List.of("/api/admin/permission/page", "/api/admin/role/page")) {
             var parameters = document.path("paths").path(path).path("get").path("parameters");

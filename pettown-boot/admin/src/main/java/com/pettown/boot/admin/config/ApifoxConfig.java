@@ -1,4 +1,4 @@
-package com.pettown.boot.admin;
+package com.pettown.boot.admin.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

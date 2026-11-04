@@ -13,7 +13,7 @@
 | `gradle/libs.versions.toml` | 集中管理插件与外部依赖版本。 |
 | `gradle/wrapper`、`gradlew`、`gradlew.bat` | 固定并运行 Gradle Wrapper。 |
 | `pettown-common` | 各客户端项目复用的公共基础能力。 |
-| `pettown-modules` | 客户端项目模块与共享核心业务模块。 |
+| `pettown-modules` | 业务模块，包含客户端业务接口与共享核心业务，不承载运行配置和组件装配。 |
 | `pettown-boot` | App、Admin、小程序各自的 Spring Boot 启动、运行配置和项目模块装配。 |
 | `docs` | 项目文档。 |
 | `scripts` | 构建和部署脚本；目前仅有构建脚本。 |
@@ -55,13 +55,13 @@
 | `module-app/src/main/java/com/pettown/app/pet/dto` | App 请求参数。 |
 | `module-app/src/main/java/com/pettown/app/pet/vo` | App 响应对象，负责将业务实体映射为接口响应。 |
 
-只有实际代码或资源存在时才创建对应目录。新业务若供多个客户端复用，其业务逻辑进入 `module-business` 下的独立业务包；客户端差异保留在各项目模块。`pettown-common` 只承载通用基础能力，不承载宠物等具体业务逻辑。
+只有实际代码或资源存在时才创建对应目录。新业务若供多个客户端复用，其业务逻辑进入 `module-business` 下的独立业务包；客户端差异保留在各项目模块。`pettown-modules` 的生产代码不放置 Spring 配置类、Bean 装配、拦截器注册或运行环境配置，这些属于对应 Boot 工程；模块 Gradle 脚本、Mapper 资源和隔离测试配置保留在所属模块。`pettown-common` 只承载通用基础能力及其基础组件配置，不承载宠物等具体业务逻辑。
 
 ## Boot 模块
 
 `pettown-boot/app`、`pettown-boot/admin`、`pettown-boot/miniapp` 是三个独立可运行的 Gradle 子工程。每个工程只依赖自己的客户端模块，启动类扫描自己的客户端包、实际使用的共享业务包和公共包；每个工程各有一份 `application.yml`、一个 `.env.example` 和日志配置。三个工程的接口装配测试使用独立 H2 数据库。App 只扫描宠物 Mapper，小程序只扫描用户 Mapper，Admin 只扫描后台业务 Mapper，避免装配其他客户端未使用的业务。Admin 使用账号、角色、权限、角色权限四表，账号通过 `admin_account.role_id` 关联单个角色；不依赖账号角色中间表。初始化和启动见 [Admin 接口说明](admin-api.md)。
 
-App 与小程序的安全配置分别位于各自 Boot 的 `config`，统一通过 `PetTownToken.USER` 校验登录；App 宠物接口不再匿名开放。Admin 在客户端模块的 `config` 注册拦截器，`interceptor` 负责管理员专属校验，`auth/controller` 的公开方法通过 `@SaIgnore` 声明。三端 Boot 均按需依赖 `common-security` 和 Redis 会话组件，公共模块不承载管理员业务规则。详见 [Sa-Token 与接口放行](common-modules.md#sa-token-与接口放行)。
+三端安全配置分别位于各自 Boot 的 `config`。App 与小程序通过 `PetTownToken.USER` 校验登录，App 宠物接口要求登录。Admin 的 `config/SaTokenConfigure` 先注册 `interceptor/AdminSessionInterceptor` 执行会话校验，再注册 Sa-Token 注解校验。`config/StpInterfaceImpl` 通过业务 Service 提供角色和权限。Admin Controller 使用原生 `@SaCheckPermission` 声明接口权限，三端均通过 `@SaIgnore` 声明公开方法。三端 Boot 按需依赖 `common-security` 和 Redis 会话组件。详见 [Sa-Token 与接口放行](common-modules.md#sa-token-与接口放行)。
 
 ## 依赖方向
 
