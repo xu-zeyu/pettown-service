@@ -1,0 +1,34 @@
+# 供项目 stack_profiles 引用的技术栈 ID
+id: "java_spring"
+# 技术栈展示名称
+display_name: "Java / Spring 后端"
+# 适用项目类型，仅供匹配参考
+applies_to: ["Java 后端", "Spring Boot 服务"]
+
+# 扫描仓库时使用的线索，不代表已核实事实
+discovery:
+  # 优先检查的文件或目录
+  inspect_files:
+    - "pom.xml"
+    - "build.gradle"
+    - "build.gradle.kts"
+    - "settings.gradle"
+    - "src/main"
+    - "src/test"
+    - "application*.yml"
+    - "application*.yaml"
+  # 需从仓库或项目文档确认的事实
+  identify:
+    - "Java 版本和 Spring Boot 版本"
+    - "Maven/Gradle 模块及依赖边界"
+    - "Controller、Service、Repository、DTO 和 Entity 分层"
+    - "数据库迁移机制和 ORM 框架"
+    - "安全认证、权限控制和幂等处理"
+    - "测试框架及真实测试命令"
+
+# 使用该技术栈时应遵循的编码和审批约束
+rules:
+  - "遵循项目现有分层和包结构，未经审批不擅自引入新架构。"
+  - "修改 API 契约、数据库结构、认证或授权逻辑前必须获得明确审批。"
+  - "优先使用项目已有依赖和版本。"
+  - "只有实际执行 Maven/Gradle 构建或测试并成功后，才能报告通过。"

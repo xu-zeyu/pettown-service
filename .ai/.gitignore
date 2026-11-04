@@ -1,0 +1,9 @@
+# 本地执行日志可能包含个人路径或环境信息
+runs/**/local-logs/
+
+# 禁止提交密钥和凭证
+**/.env
+**/*.pem
+**/*.key
+**/*secret*
+**/*credential*

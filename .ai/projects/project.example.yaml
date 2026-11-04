@@ -1,0 +1,112 @@
+# 配置结构版本，修改字段格式时递增
+schema_version: 1
+
+# 单个项目的配置，业务事实只归属此项目
+project:
+  # 稳定且唯一的项目 ID，需与注册表一致
+  id: "替换为项目唯一编号"
+  # 项目展示名称
+  name: "待填写"
+  # 项目范围简介；未核实内容保持待确认
+  description: "待填写"
+  # 项目画像状态：discovery_pending 待核实、verified 已核实、archived 已归档
+  status: "discovery_pending"
+
+  # 仓库身份信息，写入前必须核对
+  repository:
+    # 仓库根目录的实际路径
+    path: "待确认"
+    # 仓库实际远程地址
+    remote_url: "待确认"
+    # 仓库默认分支，以远程配置为准
+    default_branch: "待确认"
+
+  # 对应项目的 TAPD 信息，需从真实连接器核实
+  tapd:
+    # TAPD 工作空间 ID
+    workspace_id: "待确认"
+    # TAPD 项目 ID
+    project_id: "待确认"
+    # TAPD 项目链接
+    project_url: "待确认"
+
+  # 经核实的产品背景
+  product:
+    # 目标用户群体
+    target_users: []
+    # 核心使用场景
+    core_scenarios: []
+    # 业务目标
+    business_goals: []
+
+  # 可同时引用多个技术栈配置。
+  # 引用 config/stack-profiles 中的技术栈配置 ID
+  stack_profiles:
+    - "替换为技术栈配置编号"
+
+  # 以下信息必须从真实仓库扫描，不得凭经验填写。
+  # 从仓库扫描确认的技术事实
+  technology:
+    # 实际使用的编程语言
+    languages: []
+    # 实际使用的框架
+    frameworks: []
+    # 实际运行时、SDK 或工具版本映射
+    runtime_versions: {}
+    # 实际使用的数据库
+    databases: []
+    # 实际使用的构建工具
+    build_tools: []
+
+  # 从仓库核实的可执行命令，未知时不要运行
+  commands:
+    # 依赖安装命令
+    install: "待扫描确认"
+    # 构建命令
+    build: "待扫描确认"
+    # 测试命令
+    test: "待扫描确认"
+    # 代码检查命令
+    lint: "待扫描确认"
+
+  # 功能模块地图的位置与核实时间
+  modules:
+    # 模块地图文件路径；多项目使用时需确保项目隔离
+    source_of_truth: ".ai/project-knowledge/modules.md"
+    # 模块地图最近人工核实日期；未核实用 null
+    last_verified: null
+
+  # 已核实可用的 WorkBuddy Skill 名称，空列表表示尚未确认
+  skills:
+    # 只有核实 WorkBuddy 已安装的 Skill 后才能填写准确名称。
+    # 代码分析 Skill
+    code_analysis: []
+    # 后端开发 Skill
+    backend_development: []
+    # 前端开发 Skill
+    frontend_development: []
+    # 移动端开发 Skill
+    mobile_development: []
+    # 测试 Skill
+    testing: []
+    # TAPD Skill
+    tapd: []
+    # 企业微信 Skill
+    wecom: []
+
+  # 项目级操作边界；true 不替代单次人工审批
+  permissions:
+    # 是否允许读取当前项目仓库
+    may_read_repository: true
+    # 批准当前修改范围后是否允许编辑源码
+    may_edit_source_code_after_approval: true
+    # 是否允许运行本地测试
+    may_run_local_tests: true
+    # 是否允许执行数据库迁移；还需单次授权
+    may_run_database_migrations: false
+    # 是否允许提交或推送；还需单次授权
+    may_commit_or_push: false
+    # 是否允许部署；还需单次授权
+    may_deploy: false
+    # 是否允许生产环境操作；还需单次授权
+    may_touch_production: false

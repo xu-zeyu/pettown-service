@@ -1,0 +1,24 @@
+# 配置结构版本，修改字段格式时递增
+schema_version: 1
+
+# 当前工作空间可选择的项目注册表；每个仓库登记一条记录。
+projects:
+  # 稳定且唯一的项目 ID，需与项目配置中的 project.id 一致
+  - id: "pet-system"
+    # 项目展示名称
+    name: "宠物管理系统"
+    # 相对本文件的项目配置路径
+    config: "../projects/pet-system.yaml"
+    # 仓库根目录；写入前据此核对身份
+    repository_path: "待确认"
+    # 是否允许选择此项目
+    enabled: true
+    # 技术栈配置 ID 列表，需与项目配置对应
+    stacks: ["java_spring", "vue_frontend"]
+    # 项目范围简介
+    description: "宠物管理相关系统，具体技术栈待扫描确认"
+
+# 项目选择与写入前的校验策略
+selection:
+  require_explicit_project_id_when_ambiguous: true # 多项目场景必须明确选择
+  verify_repository_path_before_writing: true       # 写入前核对仓库路径

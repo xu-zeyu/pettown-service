@@ -1,0 +1,50 @@
+# 配置结构版本，修改字段格式时递增
+schema_version: 1
+
+# 工作空间的展示和本地化信息
+workspace:
+  # 工作空间名称
+  name: "多项目 AI 研发工作空间"
+  # 工作空间用途说明
+  description: "供多个代码仓库和不同技术栈共用的 AI 研发规范"
+  # 默认文档语言
+  language: "zh-CN"
+  # 日期和时间使用的时区
+  timezone: "Asia/Shanghai"
+
+# 所有项目共用的默认规则
+defaults:
+  # 各类操作的人工作业审批开关
+  approval_required:
+    requirement_creation: true       # 创建正式需求前必须人工审批
+    technical_design: true           # 技术方案必须人工审批
+    task_breakdown: true             # 任务拆解必须人工审批
+    code_changes: true               # 代码修改必须获得明确授权
+    database_migrations: true        # 数据库变更必须人工审批
+    permission_or_auth_changes: true # 权限和认证变更必须人工审批
+    git_commit_or_push: true         # Git 提交和推送必须人工审批
+    production_operations: true      # 生产操作必须人工审批
+
+  # 跨项目隔离、事实核实和敏感信息规则
+  safety:
+    # 不得读取其他项目业务知识
+    never_read_other_project_business_knowledge: true
+    # 不得编造仓库事实
+    never_invent_repository_facts: true
+    # 未执行的测试不得声称通过
+    never_claim_unexecuted_tests_passed: true
+    # 不得暴露密钥或凭证
+    never_expose_secrets: true
+    # 生产变更需要明确授权
+    production_changes_forbidden_without_explicit_authorization: true
+
+  # 交付报告的默认要求
+  output:
+    # 报告语言
+    language: "zh-CN"
+    # 报告中列出假设
+    include_assumptions: true
+    # 区分事实与建议
+    distinguish_facts_from_recommendations: true
+    # 报告修改时附文件路径
+    include_file_paths_when_reporting_changes: true
