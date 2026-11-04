@@ -73,7 +73,7 @@ Boot 工程、客户端模块 → 按需使用的 common 模块
 - Mapper 继承 `common-mybatis` 的 `BaseMapperX<T>`，查询优先复用现有方法和 Lambda 条件构造器。业务代码禁止使用 `JdbcTemplate` 或手写 JDBC。
 - 实体映射与现有表结构、字段及主键策略保持一致：宠物映射 `pet`，使用自增 `Long` ID；用户映射 `user_account`，使用 Service 生成的字符串 ID 和 `IdType.INPUT`。不擅自统一主键类型或给已有表强加字段。
 - 只有表包含对应时间字段时才继承 `BaseEntity`，时间填充复用 `MyMetaObjectHandler`。表结构变更须提供相应 SQL，并同步受影响的 `src/test/resources/schema.sql`。
-- 密码使用 BCrypt 哈希保存和校验；密码、密码哈希和验证码不得进入响应或日志。Token 仅通过明确的认证接口响应发放，不记录到日志；认证复用 `PetTownToken`，保持用户与管理员账号空间隔离。
+- 账号密码统一通过 `PasswordService` 生成 SHA-256 哈希并校验，兼容已保存的 BCrypt 哈希。密码、密码哈希和验证码不得进入响应或日志。Token 仅通过明确的认证接口响应发放，且不得写入日志。认证复用 `PetTownToken`，保持用户与管理员账号空间隔离。
 - App、小程序接口默认校验 `PetTownToken.USER`，Admin 默认校验 `PetTownToken.ADMIN`；App 宠物接口同样要求用户登录。三端只从 `Authorization: Bearer <token>` 请求头读取 Token，不接收 Cookie 或请求参数 Token；生产会话使用 RedisTemplate，App 与小程序共享用户会话时须连接相同 Redis。
 - 公开业务接口在具体方法上显式添加 `@SaIgnore`，并同步 OpenAPI 的公开语义；不得按方法名猜测是否放行，也不得整体放行 `/public/**` 或 `/auth/**`。框架路径仅按实际需要排除 `/error`、`/v3/api-docs` 及其子路径，新增接口默认受保护。
 - 通用 Sa-Token 上下文和 ASYNC/ERROR 内部分发处理放在 `common-security`，各端的路由规则与账号空间由本端配置装配。管理员状态、会话版本及权限规则留在 Admin。首次请求必须鉴权，异步或错误内部分发不重复鉴权。需要具体权限的 Admin 接口使用原生 `@SaCheckPermission`，显式指定 `type = "admin"`。
@@ -95,7 +95,7 @@ Boot 工程、客户端模块 → 按需使用的 common 模块
 - Apifox 通过 Springdoc 生成的 OpenAPI 3 文档导入或同步，统一入口为 `/v3/api-docs`。默认 App 为 `http://localhost:8080/v3/api-docs`，Admin 为 `http://localhost:8081/v3/api-docs`，小程序为 `http://localhost:8082/v3/api-docs`；实际端口以各端配置为准。不维护与 Controller、DTO、VO 脱节的手工接口定义。
 - 每个已接入的 Boot 工程在 `com.pettown.boot.<客户端>.ApifoxConfig` 中提供本端唯一的 `OpenAPI` Bean，命名为 `<客户端>OpenApi`。三端保持同样的配置结构：本端中文标题、版本（当前为 `0.0.1`）、说明及认证方案；不将本端文档配置放入业务模块，不在文档中硬编码部署域名、真实连接信息或凭据。
 - Springdoc starter 仅由对应 Boot 工程装配，版本与依赖坐标复用 Version Catalog；客户端模块使用 `libs.swagger.annotations.jakarta` 编写注解。不得为文档接入升级依赖、引入另一套 Swagger 生成器或扩大业务扫描范围。
-- 在各端 `application.yml` 中通过 `springdoc.packages-to-scan` 和 `springdoc.paths-to-match` 限定本端接口：App 为 `com.pettown.app`、既有 `/api/pets/**`，Admin 为 `com.pettown.admin`、`/api/admin/**`，miniapp 为 `com.pettown.miniapp`、`/api/miniapp/**`。新增客户端按相同约定配置，不将其他客户端、测试或内部辅助接口纳入文档。
+- 在各端 `application.yml` 中通过 `springdoc.packages-to-scan` 和 `springdoc.paths-to-match` 限定本端接口：App 为 `com.pettown.app`、既有 `/api/pets/**`，Admin 为 `com.pettown.admin`、`/mng/**`，miniapp 为 `com.pettown.miniapp`、`/api/miniapp/**`。新增客户端按相同约定配置，不将其他客户端、测试或内部辅助接口纳入文档。
 - 新增或修改公开 HTTP 接口时，Controller 使用中文 `@Tag` 分组，每个接口使用 `@Operation(summary = "...")` 描述操作。必要的登录条件、权限编码、状态变更、整组替换/清空语义与会话失效行为写入 `description`；不能仅靠方法名或 `@Log` 充当接口说明。
 - 三端统一声明名为 `bearerAuth` 的 HTTP Bearer 认证方案，对应 `Authorization: Bearer <token>`。Sa-Token 是不透明 Token，不标记为 JWT；管理员与用户 Token 仍使用各自账号空间。仅在实际需要登录的 Controller 或方法上添加 `@SecurityRequirement(name = "bearerAuth")`，登录和验证码等公开接口不得误标认证，也不通过全局默认认证误伤公开接口。
 - OpenAPI 安全声明只负责文档，不能替代 `PetTownToken` 登录检查、权限注解或拦截器；也不能为了导入文档放宽业务接口鉴权。文档必须反映实际认证和授权行为。

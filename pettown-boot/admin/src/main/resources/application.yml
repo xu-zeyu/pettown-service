@@ -25,6 +25,7 @@ pettown:
       phone: ${PETTOWN_ADMIN_BOOTSTRAP_PHONE:}
 
 mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
     cache-enabled: false
@@ -49,5 +50,5 @@ server:
 
 springdoc:
   packages-to-scan: com.pettown.admin
-  paths-to-match: /api/admin/**
+  paths-to-match: /mng/**
   default-flat-param-object: true

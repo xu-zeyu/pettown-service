@@ -8,6 +8,7 @@ import cn.dev33.satoken.SaManager;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.dao.SaTokenDao;
 import cn.dev33.satoken.dao.SaTokenDaoDefaultImpl;
+import cn.dev33.satoken.secure.SaSecureUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +32,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
@@ -68,12 +70,12 @@ class AdminAlignmentTests {
 
     @org.springframework.web.bind.annotation.RestController
     static class SecurityProbeController {
-        @org.springframework.web.bind.annotation.GetMapping({"/api/admin/public/security-probe", "/security-probe"})
+        @org.springframework.web.bind.annotation.GetMapping({"/mng/public/security-probe", "/security-probe"})
         com.pettown.common.result.Result<String> protectedEndpoint() {
             return com.pettown.common.result.Result.success("ok");
         }
 
-        @org.springframework.web.bind.annotation.GetMapping("/api/admin/future-permission-probe")
+        @org.springframework.web.bind.annotation.GetMapping("/mng/future-permission-probe")
         @SaCheckPermission(value = "future:unregistered:permission", type = "admin")
         com.pettown.common.result.Result<String> futurePermission() {
             return com.pettown.common.result.Result.success("ok");
@@ -93,15 +95,15 @@ class AdminAlignmentTests {
         call("GET", "/future-permission-probe", staffToken, null, 403);
         call("GET", "/system/accounts", staffToken, null, 200);
         String userToken = PetTownToken.USER.createLoginSession("fixture-user");
-        call("GET", "/self", userToken, null, 401);
+        call("GET", "/auth/me", userToken, null, 401);
         call("GET", "/system/accounts", userToken, null, 401);
         mvc.perform(MockMvcRequestBuilders.get("/security-probe")).andExpect(
                 org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isUnauthorized());
         mvc.perform(MockMvcRequestBuilders.get("/security-probe").header("Authorization", "Bearer " + rootToken))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
-        mvc.perform(MockMvcRequestBuilders.get("/api/admin/self").param("Authorization", "Bearer " + rootToken))
+        mvc.perform(MockMvcRequestBuilders.get("/mng/self").param("Authorization", "Bearer " + rootToken))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isUnauthorized());
-        mvc.perform(MockMvcRequestBuilders.get("/api/admin/self")
+        mvc.perform(MockMvcRequestBuilders.get("/mng/self")
                         .cookie(new jakarta.servlet.http.Cookie("Authorization", "Bearer " + rootToken)))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isUnauthorized());
     }
@@ -123,7 +125,7 @@ class AdminAlignmentTests {
         root.setPasswordChangeRequired(true);
         accounts.updateById(root);
         call("GET", "/future-permission-probe", rootToken, null, 403);
-        call("GET", "/self", rootToken, null, 200);
+        call("GET", "/auth/me", rootToken, null, 200);
         root.setPasswordChangeRequired(false);
         root.setEnabled(false);
         accounts.updateById(root);
@@ -173,10 +175,18 @@ class AdminAlignmentTests {
     }
 
     @Test
+    void rejectsLoginForUnknownUsername() throws Exception {
+        JsonNode response = call("POST", "/auth/login", null,
+                Map.of("username", "fixture_missing", "password", PASSWORD, "smsCode", "000007"), 400);
+        assertThat(response.path("msg").asText()).isEqualTo("账号或密码错误");
+    }
+
+    @Test
     void smsLoginUsesPasswordAndIsolatedOneTimeCodeWithoutLeakingSecrets() throws Exception {
         var role = service.createNamedRole(1L, "客服", "测试角色");
         var admin = service.createAdmin(1L, "fixture_staff", PASSWORD, "13800000000", "测试管理员", role.getId());
-        JsonNode generated = call("POST", "/public/captcha/login/fixture_staff", null, null, 200);
+        JsonNode generated = call("POST", "/auth/verification", null,
+                Map.of("phone", "13800000000", "type", "ADMIN_LOGIN"), 200);
         assertThat(generated.path("data").isNull()).isTrue();
         String key = "pettown:verification-code:admin_login:13800000000";
         String code = (String) codes.get(key);
@@ -185,31 +195,41 @@ class AdminAlignmentTests {
         codes.put("pettown:verification-code:login_register:13800000000", "654321");
         call("POST", "/auth/verification", null, Map.of("phone", "13800000000", "type", "LOGIN_REGISTER"), 400);
         assertThat(codes).containsEntry("pettown:verification-code:login_register:13800000000", "654321");
-        call("POST", "/login/sms", null,
+        call("POST", "/auth/login", null,
                 Map.of("username", "fixture_staff", "password", "Wrong-Fixture-Password", "smsCode", code), 400);
         assertThat(codes.get(key)).isEqualTo(code);
         String wrongCode = code.equals("000000") ? "000001" : "000000";
-        call("POST", "/login/sms", null, Map.of("username", "fixture_staff", "password", PASSWORD, "smsCode", wrongCode), 400);
-        JsonNode loggedIn = call("POST", "/login/sms", null,
+        call("POST", "/auth/login", null, Map.of("username", "fixture_staff", "password", PASSWORD, "smsCode", wrongCode), 400);
+        JsonNode loggedIn = call("POST", "/auth/login", null,
                 Map.of("username", "fixture_staff", "password", PASSWORD, "smsCode", code), 200);
-        String token = loggedIn.path("data").asText();
+        String token = loggedIn.path("data").path("token").asText();
         assertThat(token).isNotBlank();
         assertThat(codes).doesNotContainKey(key).containsKey("pettown:verification-code:login_register:13800000000");
-        call("POST", "/login/sms", null, Map.of("username", "fixture_staff", "password", PASSWORD, "smsCode", code), 400);
-        JsonNode self = call("GET", "/self", token, null, 200).path("data");
-        assertThat(self.path("userName").asText()).isEqualTo("fixture_staff");
-        assertThat(self.has("authorities")).isTrue();
-        JsonNode info = call("GET", "/info", token, null, 200).path("data");
-        assertThat(info.path("realName").asText()).isEqualTo("测试管理员");
-        assertThat(info.path("role").path("rname").asText()).isEqualTo("客服");
-        assertThat(info.path("lastLoginTime").isNull()).isFalse();
-        assertThat(info.has("passwordHash")).isFalse();
-        assertThat(info.has("sessionVersion")).isFalse();
-        assertThat(service.getAccount(admin.getId()).getPasswordHash()).startsWith("$2");
+        call("POST", "/auth/login", null, Map.of("username", "fixture_staff", "password", PASSWORD, "smsCode", code), 400);
+        JsonNode me = call("GET", "/auth/me", token, null, 200).path("data");
+        assertThat(me.path("account").path("username").asText()).isEqualTo("fixture_staff");
+        assertThat(me.has("permissions")).isTrue();
+        assertThat(me.path("account").path("displayName").asText()).isEqualTo("测试管理员");
+        assertThat(me.path("roles").get(0).path("name").asText()).isEqualTo("客服");
+        assertThat(service.getAccount(admin.getId()).getLastLoginTime()).isNotNull();
+        assertThat(me.path("account").has("passwordHash")).isFalse();
+        assertThat(me.path("account").has("sessionVersion")).isFalse();
+        assertThat(service.getAccount(admin.getId()).getPasswordHash()).isEqualTo(SaSecureUtil.sha256(PASSWORD));
         call("GET", "/permission/list", token, null, 403);
-        call("GET", "/self", null, null, 401);
+        call("GET", "/auth/me", null, null, 401);
         call("POST", "/auth/logout", token, null, 200);
-        call("GET", "/self", token, null, 401);
+        call("GET", "/auth/me", token, null, 401);
+    }
+
+    @Test
+    void authenticatesAnAdministratorWithAnExistingBcryptHash() throws Exception {
+        var admin = service.createAdmin(1L, "fixture_legacy", PASSWORD, "13800000000", null, null);
+        admin.setPasswordHash(new BCryptPasswordEncoder().encode(PASSWORD));
+        accounts.updateById(admin);
+
+        String token = passwordLogin("fixture_legacy");
+        assertThat(call("GET", "/auth/me", token, null, 200).path("data").path("account").path("username").asText())
+                .isEqualTo("fixture_legacy");
     }
 
     @Test
@@ -266,7 +286,7 @@ class AdminAlignmentTests {
         assertThat(service.rolePermissions(otherRole.getId())).isEmpty();
         call("GET", "/system/accounts", token, null, 403);
         service.updateAccount(1L, staff.getId(), "新的显示名", "13400000000");
-        call("GET", "/self", token, null, 401);
+        call("GET", "/auth/me", token, null, 401);
     }
 
     @Test
@@ -336,7 +356,7 @@ class AdminAlignmentTests {
 
     @Test
     void roleAndPermissionChangesImmediatelyAffectAnExistingToken() throws Exception {
-        var role = service.createRole(1L, "fixture_live_role", "动态权限角色");
+        var role = service.createNamedRole(1L, "动态权限角色", null);
         service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
         var staff = service.createAdmin(1L, "fixture_live_access", PASSWORD, "13800000005", null, role.getId());
         String token = passwordLogin("fixture_live_access");
@@ -345,7 +365,7 @@ class AdminAlignmentTests {
         service.updateRole(1L, role.getId(), role.getName(), false);
         assertThat(service.getAccount(staff.getId()).getRoleId()).isEqualTo(role.getId());
         assertThat(authorities(token)).isEmpty();
-        assertThat(call("GET", "/info", token, null, 200).path("data").path("role").isNull()).isTrue();
+        assertThat(call("GET", "/auth/me", token, null, 200).path("data").path("roles").size()).isZero();
         call("GET", "/system/accounts", token, null, 403);
 
         service.updateRole(1L, role.getId(), role.getName(), true);
@@ -361,7 +381,7 @@ class AdminAlignmentTests {
         call("GET", "/system/accounts", token, null, 200);
         service.deleteRole(1L, role.getId());
         call("GET", "/system/accounts", token, null, 403);
-        call("GET", "/self", token, null, 200);
+        call("GET", "/auth/me", token, null, 200);
     }
 
     @Test
@@ -379,8 +399,8 @@ class AdminAlignmentTests {
         assertThat(service.getRole(role.getId())).isNotNull();
         assertThat(service.rolePermissions(role.getId())).containsExactly("system:account:read");
         assertThat(service.getAccount(other.getId()).getRoleId()).isEqualTo(role.getId());
-        call("GET", "/self", tokenA, null, 401);
-        call("GET", "/self", tokenB, null, 401);
+        call("GET", "/auth/me", tokenA, null, 401);
+        call("GET", "/auth/me", tokenB, null, 401);
         call("DELETE", "/system/accounts/" + staff.getId(), rootToken, null, 404);
     }
 
@@ -389,19 +409,19 @@ class AdminAlignmentTests {
         var staff = service.createAdmin(1L, "fixture_removed", PASSWORD, "13000000000", null, null);
         String token = passwordLogin("fixture_removed");
         accounts.deleteById(staff.getId());
-        call("GET", "/self", token, null, 401);
+        call("GET", "/auth/me", token, null, 401);
     }
 
     @Test
     void deletingARoleKeepsAccountsAndClearsOnlyTheirRoleReference() throws Exception {
-        var role = service.createRole(1L, "fixture_role_delete", "待删除角色");
+        var role = service.createNamedRole(1L, "待删除角色", null);
         service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
         var staff = service.createAdmin(1L, "fixture_role_keep", PASSWORD, "13900000001", null, role.getId());
         String token = passwordLogin("fixture_role_keep");
         call("DELETE", "/system/roles/" + role.getId(), rootToken, null, 200);
         assertThat(service.getAccount(staff.getId()).getRoleId()).isNull();
         assertThat(authorities(token)).isEmpty();
-        assertThat(call("GET", "/info", token, null, 200).path("data").path("role").isNull()).isTrue();
+        assertThat(call("GET", "/auth/me", token, null, 200).path("data").path("roles").size()).isZero();
     }
 
     @Test
@@ -417,12 +437,20 @@ class AdminAlignmentTests {
         var staff = service.createAdmin(1L, "fixture_disabled", PASSWORD, "13600000000", null, null);
         String token = passwordLogin("fixture_disabled");
         service.setAccountEnabled(1L, staff.getId(), false);
-        call("GET", "/self", token, null, 401);
+        call("GET", "/auth/me", token, null, 401);
         service.setAccountEnabled(1L, staff.getId(), true);
-        call("GET", "/self", token, null, 401);
+        call("GET", "/auth/me", token, null, 401);
         String freshToken = passwordLogin("fixture_disabled");
         service.resetPassword(1L, staff.getId(), INITIAL_PASSWORD);
-        call("GET", "/self", freshToken, null, 401);
+        assertThat(service.getAccount(staff.getId()).getPasswordHash()).isEqualTo(SaSecureUtil.sha256(INITIAL_PASSWORD));
+        call("GET", "/auth/me", freshToken, null, 401);
+        service.generateLoginCode("fixture_disabled");
+        Object code = codes.get("pettown:verification-code:admin_login:13600000000");
+        call("POST", "/auth/login", null,
+                Map.of("username", "fixture_disabled", "password", PASSWORD, "smsCode", code), 400);
+        JsonNode login = call("POST", "/auth/login", null,
+                Map.of("username", "fixture_disabled", "password", INITIAL_PASSWORD, "smsCode", code), 200);
+        assertThat(login.path("data").path("token").asText()).isNotBlank();
     }
 
     private String passwordLogin(String username) throws Exception {
@@ -440,13 +468,13 @@ class AdminAlignmentTests {
     }
 
     private List<String> authorities(String token) throws Exception {
-        return json.convertValue(call("GET", "/self", token, null, 200).path("data").path("authorities"),
+        return json.convertValue(call("GET", "/auth/me", token, null, 200).path("data").path("permissions"),
                 json.getTypeFactory().constructCollectionType(List.class, String.class));
     }
 
     private JsonNode call(String method, String path, String token, Object body, int expectedStatus) throws Exception {
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders.request(
-                org.springframework.http.HttpMethod.valueOf(method), "/api/admin" + path);
+                org.springframework.http.HttpMethod.valueOf(method), "/mng" + path);
         if (token != null) request.header("Authorization", "Bearer " + token);
         if (body != null) request.contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
         var response = mvc.perform(request).andReturn().getResponse();

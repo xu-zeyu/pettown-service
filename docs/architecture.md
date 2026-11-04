@@ -28,7 +28,7 @@
 | `common-web` | Web 公共组件；`advice` 全局处理、`config` Web 配置、`filter` 过滤器、`interceptor` 拦截器、`response` 响应处理。 |
 | `common-mybatis` | MyBatis-Plus 公共组件；根包分页与排序参数、`config` 分页插件与自动填充、`mapper/BaseMapperX` 通用 CRUD 和 Join、`model/BaseEntity` 时间字段、`utils/MyBatisUtils` 查询工具。 |
 | `common-redis` | Redis 公共组件；`CacheUtils` 为 Redisson 缓存实现、`config` 配置与 JSON 编解码、`util/RedisCache` 为原字符串缓存 API 的兼容入口。 |
-| `common-security` | 安全认证公共组件；`config` 账号空间与 Servlet 上下文装配、`interceptor` 通用分发拦截、`handler` 安全异常处理。 |
+| `common-security` | 安全认证公共组件；`config` 账号空间与 Servlet 上下文装配、`interceptor` 通用分发拦截、`handler` 安全异常处理、`utils/PasswordService` 密码哈希与校验。 |
 | `common-file` | 文件管理公共组件；`config` 配置、`service` 文件服务、`properties` 配置属性。 |
 | `common-log` | 日志公共组件；`annotation` 操作注解、`aspect` 操作日志、`filter` 请求追踪。 |
 
@@ -67,7 +67,7 @@
 
 - 父工程统一配置，不承载业务代码。
 - `pettown-common` 只提供基础能力，不依赖业务模块或 Boot 模块。
-- `module-business` 按需依赖公共模块，不依赖 App、小程序或管理后台模块。宠物与用户业务统一通过 `common-mybatis` 的 `BaseMapperX` 持久化，禁止在业务代码中使用 `JdbcTemplate` 或手写 JDBC；用户密码使用 BCrypt 保存哈希。
+- `module-business` 按需依赖公共模块，不依赖 App、小程序或管理后台模块。宠物与用户业务统一通过 `common-mybatis` 的 `BaseMapperX` 持久化，禁止在业务代码中使用 `JdbcTemplate` 或手写 JDBC。用户及管理员的密码由 `common-security` 的 `PasswordService` 统一处理，新密码保存为 SHA-256 哈希，已有 BCrypt 哈希仍可校验。
 - 客户端项目模块按需依赖 `module-business` 与公共模块。`module-app` 使用共享宠物业务、`common-core`、`common-web` 和 `common-log`；`module-miniapp` 使用共享用户业务、`common-web` 和 `common-security`；`module-admin` 使用共享 `admin` 业务、`common-web`、`common-security` 和 `common-log`。客户端模块之间没有 Gradle 依赖。
 - 三个 Boot 子工程分别依赖自己的客户端模块及 `common-mybatis`、`common-redis`、`common-log`，负责最终装配；共享业务模块经客户端模块进入运行时。数据库和 Redis 的连接参数由各自 `.env` 提供，启用数据库自动配置与 Redisson 时须有可用服务。其他模块不得依赖 Boot。
 - 所有依赖保持单向，禁止循环依赖。

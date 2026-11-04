@@ -24,6 +24,7 @@ import com.pettown.common.mybatis.SortablePageParam;
 import com.pettown.common.mybatis.SortingField;
 import com.pettown.common.mybatis.config.MyMetaObjectHandler;
 import com.pettown.common.mybatis.config.MybatisPlusConfig;
+import com.pettown.common.utils.PasswordService;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -57,7 +58,7 @@ class PersistenceTests {
     @EnableAutoConfiguration
     @MapperScan({"com.pettown.business.pet.mapper", "com.pettown.business.user.mapper"})
     @Import({MybatisPlusConfig.class, MyMetaObjectHandler.class,
-            PetServiceImpl.class, UserAuthServiceImpl.class})
+            PetServiceImpl.class, UserAuthServiceImpl.class, PasswordService.class})
     static class TestApplication {
     }
 
@@ -124,7 +125,8 @@ class PersistenceTests {
         User registered = userAuthService.loginOrRegister("13800138000", "strongPass123", "000007",
                 UserSourceEnum.IOS);
         assertThat(registered.getId()).matches("pettown[0-9a-f]{24}");
-        assertThat(registered.getPasswordHash()).startsWith("$2").isNotEqualTo("strongPass123");
+        assertThat(userAuthService.getById(registered.getId()).getPasswordHash())
+                .isEqualTo("505cb486b0210c00109e33179fa17f00fc3d483dce5c430461088b7e8f46975d");
         assertThat(userAuthService.getById(registered.getId()).getPhone()).isEqualTo("13800138000");
         assertThat(userAuthService.getById(registered.getId()).getSource()).isEqualTo(UserSourceEnum.IOS);
         User loggedIn = userAuthService.loginOrRegister("13800138000", "strongPass123", "000007",

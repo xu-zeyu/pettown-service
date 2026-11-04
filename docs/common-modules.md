@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | `common-mybatis` | MyBatis-Plus 分页、排序、Join、`BaseMapperX` CRUD/批量操作、自动填充、基础实体与分页结果 | 三个 Boot 工程均已依赖；App 与小程序须配置数据库连接并先执行建表脚本。 |
 | `common-redis` | `CacheUtils` Redisson 缓存、Map 操作，兼容 `RedisCache` 字符串 API | 三个 Boot 工程均已依赖该模块；通过各自 `.env` 配置 Redis。小程序默认启用 Redisson，App 按需启用，Admin 默认启用以缓存登录验证码。 |
-| `common-security` | Sa-Token starter、`user` / `admin` 独立账号空间、Servlet 上下文、分发拦截器及 401/403 异常响应 | 三端 Boot 装配本端拦截规则与 RedisTemplate 会话。Admin 的 RBAC 及初始化见 [Admin 接口说明](admin-api.md)。 |
+| `common-security` | Sa-Token starter、`user` / `admin` 独立账号空间、Servlet 上下文、分发拦截器及 401/403 异常响应、`PasswordService` 密码哈希与校验 | 三端 Boot 装配本端拦截规则与 RedisTemplate 会话。Admin 的 RBAC 及初始化见 [Admin 接口说明](admin-api.md)。 |
 | `common-file` | `FileService` 的阿里云 OSS 上传下载实现 | 使用方依赖该模块，设置 `pettown.file.enabled=true` 及 `aliyun.oss.endpoint`、`access-key-id`、`access-key-secret`、`bucket-name`、`region`。密钥通过环境变量或部署配置传入。 |
 | `common-log` | `@Log` 操作日志、`X-Trace-Id` 请求追踪、滚动文件日志 | 三个 Boot 工程共用日志配置；默认写到 `logs/${spring.application.name}.log`，可通过 `logging.file.name` 改路径；`test` Profile 仅输出控制台。 |
 
@@ -26,7 +26,7 @@
 | --- | --- | --- |
 | App | `PetTownToken.USER`；全部 `/api/pets` 及详情、创建接口需要登录 | 当前没有公开业务接口，也未新增 App 登录入口 |
 | 小程序 | `PetTownToken.USER`；`/api/miniapp/user/me` 及新增接口默认需要登录 | `POST /api/miniapp/auth/login`、`POST /api/miniapp/verification/code` |
-| Admin | `PetTownToken.ADMIN` 校验会话、账号状态及初始改密，Sa-Token 原生注解校验声明的接口权限 | `POST /api/admin/auth/login`、`POST /api/admin/login/sms`、`POST /api/admin/public/captcha/login/{name}`、`POST /api/admin/auth/verification` |
+| Admin | `PetTownToken.ADMIN` 校验会话、账号状态及初始改密，Sa-Token 原生注解校验声明的接口权限 | `POST /mng/auth/login`、`POST /mng/auth/verification` |
 
 三端只接受 `Authorization: Bearer <token>`，不读取 Cookie、请求体或 query 中的 Token。App 与小程序使用相同用户账号空间，配置相同 Redis 实例和数据库后，可使用小程序登录接口签发的用户 Token 调用 App；管理员 Token 不能调用用户接口，用户 Token 也不能调用 Admin。App 和小程序默认有效期为 2592000 秒（`PETTOWN_TOKEN_TIMEOUT`），同账号新登录替换旧会话；Admin 保留 7200 秒及多终端独立 Token 的既有配置。
 
@@ -35,6 +35,10 @@
 三端在各自 Boot 的 `config` 注册拦截器，复用公共的 Sa-Token 分发组件。Admin 先校验账号和会话，再由 Sa-Token 执行管理接口上的 `@SaCheckPermission`。新增公开方法时添加 `@SaIgnore` 并核对 OpenAPI。新增受保护方法保持默认登录校验，需要具体权限的 Admin 管理接口使用 `@SaCheckPermission` 声明。使用 Sa-Token 原生登录或权限注解时，须显式指定对应 `type = "user"` 或 `type = "admin"`。
 
 三端 OpenAPI 地址分别为默认端口 8080 / 8081 / 8082 的 `/v3/api-docs`。App 文档仅包含既有 `/api/pets` 路径并声明用户 Bearer 认证。自动化测试验证实际 OpenAPI 输出，不代表已完成 Apifox 客户端导入。
+
+## 密码哈希
+
+小程序注册和登录、管理员初始化、创建、登录、修改与重置密码均通过 `PasswordService` 处理。`passwordEncrypt` 生成 64 位小写十六进制 SHA-256 哈希，`passwordValid` 将输入密码与已保存的哈希比对。已有 BCrypt 哈希仍可校验，修改或重置密码后保存为 SHA-256 哈希。
 
 ## 注册来源
 

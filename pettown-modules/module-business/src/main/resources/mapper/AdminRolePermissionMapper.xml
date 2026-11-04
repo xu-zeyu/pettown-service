@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pettown.business.admin.mapper.AdminRolePermissionMapper">
+
+    <!-- 删除角色的全部权限绑定 -->
+    <delete id="deleteRolePermissions">
+        DELETE FROM admin_role_permission
+        WHERE role_id = #{roleId}
+    </delete>
+
+    <!-- 批量插入角色权限绑定 -->
+    <insert id="batchInsertRolePermissions">
+        INSERT INTO admin_role_permission (role_id, permission_code) VALUES
+        <foreach collection="permissionCodes" item="code" separator=",">
+            (#{roleId}, #{code})
+        </foreach>
+    </insert>
+</mapper>
