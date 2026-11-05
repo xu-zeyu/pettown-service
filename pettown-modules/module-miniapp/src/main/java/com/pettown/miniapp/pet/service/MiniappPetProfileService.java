@@ -57,4 +57,11 @@ public class MiniappPetProfileService {
         return new PageResult<>(result.getRecords().stream().map(PetProfileResponse::from).toList(),
                 result.getTotal());
     }
+
+    public Pet get(String ownerId, Long id) {
+        return pets.selectOneOpt(new LambdaQueryWrapper<Pet>()
+                        .eq(Pet::getId, id)
+                        .eq(Pet::getOwnerId, ownerId))
+                .orElseThrow(() -> new BusinessException(ErrorCodeEnum.NOT_FOUND, "宠物不存在"));
+    }
 }
