@@ -10,7 +10,7 @@ project:
   # 项目范围简介；未核实内容保持待确认
   description: "pettown-server 后端：提供 App 宠物接口、小程序用户接口和管理端账号权限接口；完整产品范围待确认。"
   # 项目画像状态：discovery_pending 待核实、verified 已核实、archived 已归档
-  status: "discovery_pending"
+  status: "verified"
 
   # 仓库身份信息，写入前必须核对
   repository:
@@ -76,7 +76,7 @@ project:
     # 模块地图文件路径；多项目使用时需确保项目隔离
     source_of_truth: ".ai/project-knowledge/pet-system/modules.md"
     # 模块地图最近人工核实日期；未核实用 null
-    last_verified: null
+    last_verified: "2026-11-05"
 
   # 已核实可用的 WorkBuddy Skill 名称，空列表表示尚未确认
   skills:
