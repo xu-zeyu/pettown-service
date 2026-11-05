@@ -76,6 +76,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         HttpStatus status = switch (e.getCommonErrorCode().getCode()) {
             case "404" -> HttpStatus.NOT_FOUND;
             case "429" -> HttpStatus.TOO_MANY_REQUESTS;
+            case "423" -> HttpStatus.LOCKED;
             default -> HttpStatus.BAD_REQUEST;
         };
         return buildErrorResponse(status, e);

@@ -14,6 +14,7 @@ import com.pettown.business.pet.service.impl.PetServiceImpl;
 import com.pettown.business.user.entity.User;
 import com.pettown.business.user.mapper.UserMapper;
 import com.pettown.business.user.service.UserAuthService;
+import com.pettown.business.user.service.LoginFailureGuard;
 import com.pettown.business.user.service.impl.UserAuthServiceImpl;
 import com.pettown.business.verification.service.VerificationCodeService;
 import com.pettown.common.commonEnum.UserSourceEnum;
@@ -53,6 +54,7 @@ class PersistenceTests {
     @Autowired private UserMapper userMapper;
     @Autowired private UserAuthService userAuthService;
     @MockitoBean private VerificationCodeService verificationCodeService;
+    @MockitoBean private LoginFailureGuard loginFailureGuard;
 
     @Configuration(proxyBeanMethods = false)
     @EnableAutoConfiguration
