@@ -1,5 +1,6 @@
 package com.pettown.miniapp.pet.controller;
 
+import com.pettown.common.mybatis.PageResult;
 import com.pettown.common.result.Result;
 import com.pettown.common.security.config.PetTownToken;
 import com.pettown.miniapp.pet.dto.CreatePetProfileRequest;
@@ -11,9 +12,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -32,5 +35,27 @@ public class MiniappPetController {
     public ResponseEntity<Result<PetProfileResponse>> create(@Valid @RequestBody CreatePetProfileRequest request) {
         var profile = PetProfileResponse.from(service.create(PetTownToken.USER.getLoginIdAsString(), request));
         return ResponseEntity.created(URI.create("/api/miniapp/pets/" + profile.id())).body(Result.success(profile));
+    }
+
+    @GetMapping
+    @Operation(summary = "查询我的宠物列表", description = "仅返回当前用户宠物，按创建时间倒序；非法分页参数使用默认 page=1、size=10")
+    public Result<PageResult<PetProfileResponse>> list(
+            @RequestParam(required = false) String page,
+            @RequestParam(required = false) String size) {
+        int pageNumber = validNumberOrDefault(page, 1, Integer.MAX_VALUE, 1);
+        int pageSize = validNumberOrDefault(size, 1, 1000, 10);
+        return Result.success(service.list(PetTownToken.USER.getLoginIdAsString(), pageNumber, pageSize));
+    }
+
+    private static int validNumberOrDefault(String value, int min, int max, int fallback) {
+        if (value == null) {
+            return fallback;
+        }
+        try {
+            int parsed = Integer.parseInt(value);
+            return parsed >= min && parsed <= max ? parsed : fallback;
+        } catch (NumberFormatException ignored) {
+            return fallback;
+        }
     }
 }
