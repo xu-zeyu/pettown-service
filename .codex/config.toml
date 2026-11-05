@@ -1,0 +1,11 @@
+[mcp_servers.tapd]
+command = "/opt/homebrew/bin/uvx"
+args = ["mcp-server-tapd"]
+env_vars = ["TAPD_ACCESS_TOKEN"]
+startup_timeout_sec = 30
+
+[mcp_servers.tapd.env]
+TAPD_API_BASE_URL = "https://api.tapd.cn"
+TAPD_BASE_URL = "https://www.tapd.cn"
+# 企业微信群机器人
+BOT_URL = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=5f7fd2c4-167d-4b68-aed4-bdbd3abbbd3e"
