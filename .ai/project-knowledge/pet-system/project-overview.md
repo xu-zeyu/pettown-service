@@ -1,4 +1,4 @@
-# pet-system 项目概览（待人工核实）
+# pet-system 项目概览
 
 扫描日期：2026-11-04。仓库根目录：`/Users/xuzeyu/Documents/company/jinHan/pettown-server`。
 
