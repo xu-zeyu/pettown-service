@@ -39,8 +39,11 @@ public class AdminAuthServiceImpl implements AdminAuthService {
     @Override
     public AdminAccount authenticate(String username, String password) {
         AdminAccount account = accounts.selectOne(AdminAccount::getUsername, username);
-        Boolean passwordValid =  passwordService.passwordValid(password, account.getPasswordHash());
-        if (!Boolean.TRUE.equals(account.getEnabled()) || !passwordValid) {
+        if (account == null) {
+            throw failure("账号或密码错误");
+        }
+        Boolean passwordValid = passwordService.passwordValid(password, account.getPasswordHash());
+        if (!Boolean.TRUE.equals(account.getEnabled()) || !Boolean.TRUE.equals(passwordValid)) {
             throw failure("账号或密码错误");
         }
         return account;
