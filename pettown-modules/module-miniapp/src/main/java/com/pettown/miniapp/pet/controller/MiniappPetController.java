@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -53,6 +54,14 @@ public class MiniappPetController {
     public Result<PetProfileResponse> detail(@PathVariable Long id) {
         return Result.success(PetProfileResponse.from(
                 service.get(PetTownToken.USER.getLoginIdAsString(), id)));
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "编辑我的宠物档案", description = "仅归属用户可编辑；字段校验同创建，未提供的可选字段清空")
+    public Result<PetProfileResponse> update(@PathVariable Long id,
+            @Valid @RequestBody CreatePetProfileRequest request) {
+        return Result.success(PetProfileResponse.from(
+                service.update(PetTownToken.USER.getLoginIdAsString(), id, request)));
     }
 
     private static int validNumberOrDefault(String value, int min, int max, int fallback) {
