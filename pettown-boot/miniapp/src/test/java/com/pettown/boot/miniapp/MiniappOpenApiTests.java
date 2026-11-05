@@ -40,7 +40,7 @@ class MiniappOpenApiTests {
                 operations++;
             }
         }
-        assertThat(operations).isEqualTo(3);
+        assertThat(operations).isEqualTo(4);
         assertThat(paths.path("/api/miniapp/auth/login").path("post").path("security").size()).isZero();
         assertThat(paths.path("/api/miniapp/user/me").path("get").path("security").get(0).has("bearerAuth")).isTrue();
     }
@@ -50,6 +50,8 @@ class MiniappOpenApiTests {
         JsonNode document = document();
         var verification = document.path("paths").path("/api/miniapp/verification/code").path("post");
         assertThat(verification.path("security").size()).isZero();
+        assertThat(document.path("paths").path("/api/miniapp/verification/send").path("post")
+                .path("security").size()).isZero();
         assertThat(document.path("components").path("schemas").path("VerificationCodeRequest")
                 .path("properties").path("type").path("description").asText()).contains("验证码用途");
     }
