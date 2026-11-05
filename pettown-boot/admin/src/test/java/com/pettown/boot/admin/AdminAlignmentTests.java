@@ -444,6 +444,32 @@ class AdminAlignmentTests {
     }
 
     @Test
+    void navigationTracksCurrentReadPermissionsWithoutGrantingServerAccess() throws Exception {
+        var role = service.createNamedRole(1L, "导航验收角色", null);
+        service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
+        service.createAdmin(1L, "fixture_navigation", PASSWORD, "13800000007", null, role.getId());
+        String token = passwordLogin("fixture_navigation");
+
+        JsonNode accountMenu = call("GET", "/auth/menus", token, null, 200).path("data");
+        assertThat(accountMenu.get(0).path("children").findValuesAsText("code"))
+                .containsExactly("accounts");
+        call("GET", "/system/accounts", token, null, 200);
+        call("GET", "/system/roles", token, null, 403);
+        call("GET", "/system/permissions", token, null, 403);
+
+        service.replaceRolePermissions(1L, role.getId(), List.of());
+        assertThat(call("GET", "/auth/menus", token, null, 200).path("data")).isEmpty();
+        call("GET", "/system/accounts", token, null, 403);
+
+        service.replaceRolePermissions(1L, role.getId(), List.of("system:role:read"));
+        JsonNode roleMenu = call("GET", "/auth/menus", token, null, 200).path("data");
+        assertThat(roleMenu.get(0).path("children").findValuesAsText("code"))
+                .containsExactly("roles");
+        call("GET", "/system/roles", token, null, 200);
+        call("GET", "/system/accounts", token, null, 403);
+    }
+
+    @Test
     void deletingAnAccountPreservesRoleAndPermissionsAndRevokesAllSessions() throws Exception {
         var role = service.createNamedRole(1L, "可共享角色", null);
         service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
