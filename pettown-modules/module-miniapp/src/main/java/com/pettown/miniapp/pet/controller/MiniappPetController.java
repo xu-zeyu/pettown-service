@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,6 +46,13 @@ public class MiniappPetController {
         int pageNumber = validNumberOrDefault(page, 1, Integer.MAX_VALUE, 1);
         int pageSize = validNumberOrDefault(size, 1, 1000, 10);
         return Result.success(service.list(PetTownToken.USER.getLoginIdAsString(), pageNumber, pageSize));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "查询我的宠物详情", description = "仅返回当前用户的完整宠物档案；他人宠物与不存在的 ID 统一返回不存在")
+    public Result<PetProfileResponse> detail(@PathVariable Long id) {
+        return Result.success(PetProfileResponse.from(
+                service.get(PetTownToken.USER.getLoginIdAsString(), id)));
     }
 
     private static int validNumberOrDefault(String value, int min, int max, int fallback) {
