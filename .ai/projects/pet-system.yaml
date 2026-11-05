@@ -8,23 +8,23 @@ project:
   # 项目展示名称
   name: "宠物管理系统"
   # 项目范围简介；未核实内容保持待确认
-  description: "宠物管理系统，业务范围和技术事实待扫描确认。"
+  description: "pettown-server 后端：提供 App 宠物接口、小程序用户接口和管理端账号权限接口；完整产品范围待确认。"
   # 项目画像状态：discovery_pending 待核实、verified 已核实、archived 已归档
   status: "discovery_pending"
 
   # 仓库身份信息，写入前必须核对
   repository:
     # 仓库根目录的实际路径
-    path: "待确认"
+    path: "/Users/xuzeyu/Documents/company/jinHan/pettown-server"
     # 仓库实际远程地址
-    remote_url: "待确认"
+    remote_url: "git@github.com:xu-zeyu/pettown-service.git"
     # 仓库默认分支，以远程配置为准
-    default_branch: "待确认"
+    default_branch: "main" # 本地当前分支及远程跟踪分支均为 main；未核实远程默认分支设置
 
   # 对应项目的 TAPD 信息，需从真实连接器核实
   tapd:
-    # TAPD 工作空间 ID
-    workspace_id: "待确认"
+    # TAPD 工作空间 ID（2026-11-05 经连接器核实：项目「尾巴町管理后台端」）
+    workspace_id: "32445978"
     # TAPD 项目 ID
     project_id: "32445978"
     # TAPD 项目链接
@@ -33,43 +33,48 @@ project:
   # 经核实的产品背景
   product:
     # 目标用户群体
-    target_users: []
+    target_users: [] # 接口名称不足以确认正式用户群体
     # 核心使用场景
-    core_scenarios: []
+    core_scenarios: ["App 宠物创建与查询", "小程序登录与用户信息查询", "管理端登录及账号、角色、权限管理"]
     # 业务目标
     business_goals: []
 
   # 引用 config/stack-profiles 中的技术栈配置 ID
-  stack_profiles: ["java_spring", "vue_frontend"]
+  stack_profiles: ["java_spring"]
 
   # 从仓库扫描确认的技术事实
   technology:
     # 实际使用的编程语言
-    languages: []
+    languages: ["Java", "Kotlin DSL（Gradle 构建脚本）"]
     # 实际使用的框架
-    frameworks: []
+    frameworks: ["Spring Boot", "MyBatis-Plus", "Sa-Token", "Springdoc OpenAPI"]
     # 实际运行时、SDK 或工具版本映射
-    runtime_versions: {}
+    runtime_versions:
+      java_toolchain: "17"
+      gradle_wrapper: "8.12"
+      spring_boot: "3.5.16"
+      mybatis_plus: "3.5.15"
+      sa_token: "1.44.0"
     # 实际使用的数据库
-    databases: []
+    databases: ["MySQL（运行时 JDBC）", "Redis（可配置缓存）", "H2（测试）"]
     # 实际使用的构建工具
-    build_tools: []
+    build_tools: ["Gradle Wrapper", "Gradle Kotlin DSL"]
 
   # 从仓库核实的可执行命令，未知时不要运行
   commands:
     # 依赖安装命令
-    install: "待扫描确认"
+    install: "无独立安装命令；./gradlew build 会解析依赖"
     # 构建命令
-    build: "待扫描确认"
+    build: "./gradlew build"
     # 测试命令
-    test: "待扫描确认"
+    test: "./gradlew test"
     # 代码检查命令
-    lint: "待扫描确认"
+    lint: "待确认（未发现专用静态检查任务配置）"
 
   # 功能模块地图的位置与核实时间
   modules:
     # 模块地图文件路径；多项目使用时需确保项目隔离
-    source_of_truth: ".ai/project-knowledge/modules.md"
+    source_of_truth: ".ai/project-knowledge/pet-system/modules.md"
     # 模块地图最近人工核实日期；未核实用 null
     last_verified: null
 

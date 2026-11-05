@@ -10,13 +10,13 @@ projects:
     # 相对本文件的项目配置路径
     config: "../projects/pet-system.yaml"
     # 仓库根目录；写入前据此核对身份
-    repository_path: "待确认"
+    repository_path: "/Users/xuzeyu/Documents/company/jinHan/pettown-server"
     # 是否允许选择此项目
     enabled: true
     # 技术栈配置 ID 列表，需与项目配置对应
-    stacks: ["java_spring", "vue_frontend"]
+    stacks: ["java_spring"]
     # 项目范围简介
-    description: "宠物管理相关系统，具体技术栈待扫描确认"
+    description: "pettown-server：Java 17 / Spring Boot 的 App、小程序、管理端后端服务"
 
 # 项目选择与写入前的校验策略
 selection:
