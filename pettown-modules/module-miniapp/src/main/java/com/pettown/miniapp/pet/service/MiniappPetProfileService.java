@@ -7,7 +7,10 @@ import com.pettown.business.user.entity.User;
 import com.pettown.business.user.mapper.UserMapper;
 import com.pettown.common.exception.BusinessException;
 import com.pettown.common.exception.ErrorCodeEnum;
+import com.pettown.common.mybatis.PageParam;
+import com.pettown.common.mybatis.PageResult;
 import com.pettown.miniapp.pet.dto.CreatePetProfileRequest;
+import com.pettown.miniapp.pet.vo.PetProfileResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,5 +46,15 @@ public class MiniappPetProfileService {
         pet.setAvatarUrl(request.avatarUrl());
         pets.insert(pet);
         return pet;
+    }
+
+    public PageResult<PetProfileResponse> list(String ownerId, int page, int size) {
+        var result = pets.selectPage(new PageParam().setPage(page).setSize(size),
+                new LambdaQueryWrapper<Pet>()
+                        .eq(Pet::getOwnerId, ownerId)
+                        .orderByDesc(Pet::getCreatedTime)
+                        .orderByDesc(Pet::getId));
+        return new PageResult<>(result.getRecords().stream().map(PetProfileResponse::from).toList(),
+                result.getTotal());
     }
 }

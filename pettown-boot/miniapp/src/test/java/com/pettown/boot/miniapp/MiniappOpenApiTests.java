@@ -40,10 +40,11 @@ class MiniappOpenApiTests {
                 operations++;
             }
         }
-        assertThat(operations).isEqualTo(5);
+        assertThat(operations).isEqualTo(6);
         assertThat(paths.path("/api/miniapp/auth/login").path("post").path("security").size()).isZero();
         assertThat(paths.path("/api/miniapp/user/me").path("get").path("security").get(0).has("bearerAuth")).isTrue();
         assertThat(paths.path("/api/miniapp/pets").path("post").path("security").get(0).has("bearerAuth")).isTrue();
+        assertThat(paths.path("/api/miniapp/pets").path("get").path("security").get(0).has("bearerAuth")).isTrue();
     }
 
     @Test
