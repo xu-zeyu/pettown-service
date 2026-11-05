@@ -64,9 +64,10 @@ class PersistenceTests {
 
     @Test
     void persistsPetsAndFillsAuditTimes() {
-        Pet pet = petService.createPet(" 豆豆 ", " 猫 ");
+        Pet pet = petService.createPet("fixture-owner", " 豆豆 ", " 猫 ");
         assertThat(pet.getId()).isPositive();
-        Pet stored = petService.getPet(pet.getId());
+        assertThat(pet.getOwnerId()).isEqualTo("fixture-owner");
+        Pet stored = petService.getPet("fixture-owner", pet.getId());
         assertThat(stored.getName()).isEqualTo("豆豆");
         assertThat(stored.getCreatedTime()).isNotNull();
         assertThat(stored.getUpdatedTime()).isNotNull();
@@ -83,9 +84,9 @@ class PersistenceTests {
 
     @Test
     void pagesAndSortsInDatabaseIncludingUnpagedQueries() {
-        petService.createPet("A", "猫");
-        petService.createPet("B", "猫");
-        petService.createPet("C", "猫");
+        petService.createPet("fixture-owner", "A", "猫");
+        petService.createPet("fixture-owner", "B", "猫");
+        petService.createPet("fixture-owner", "C", "猫");
         SortablePageParam param = new SortablePageParam();
         param.setSortingFields(List.of(new SortingField("name", "desc")));
         param.setPage(2).setSize(1);
@@ -104,8 +105,8 @@ class PersistenceTests {
 
     @Test
     void injectsJoinQueriesAndKeepsUnpagedTotals() {
-        petService.createPet("A", "猫");
-        petService.createPet("B", "猫");
+        petService.createPet("fixture-owner", "A", "猫");
+        petService.createPet("fixture-owner", "B", "猫");
         // Join the same table by ID to exercise actual JOIN SQL without adding a business table.
         MPJLambdaWrapper<Pet> join = new MPJLambdaWrapper<Pet>().selectAll(Pet.class)
                 .leftJoin(Pet.class, "other", Pet::getId, Pet::getId);
@@ -118,6 +119,21 @@ class PersistenceTests {
         MPJBaseJoin<Pet> genericJoin = join;
         assertThat(petMapper.selectJoinPage(new PageParam().setSize(-1), Pet.class, genericJoin).getTotal())
                 .isEqualTo(2);
+    }
+
+    @Test
+    void hidesPetsFromOtherOwnersAndReportsSameErrorAsMissingPet() {
+        Pet owned = petService.createPet("owner-a", "豆豆", "猫");
+        assertThat(petService.getPet("owner-a", owned.getId())).isNotNull();
+        assertThat(petService.listPets("owner-a")).extracting(Pet::getName).containsExactly("豆豆");
+        // 越权访问与不存在的宠物返回同一 NOT_FOUND，不泄露存在性
+        assertThatThrownBy(() -> petService.getPet("owner-b", owned.getId()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("宠物不存在");
+        assertThatThrownBy(() -> petService.getPet("owner-b", 999999L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("宠物不存在");
+        assertThat(petService.listPets("owner-b")).isEmpty();
     }
 
     @Test

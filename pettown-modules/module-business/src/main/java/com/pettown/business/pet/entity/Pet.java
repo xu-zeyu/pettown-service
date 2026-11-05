@@ -19,4 +19,6 @@ public class Pet extends BaseEntity {
     private Long id;
     private String name;
     private String species;
+    /** 归属用户 ID（user_account.id），宠物数据按归属用户隔离。 */
+    private String ownerId;
 }

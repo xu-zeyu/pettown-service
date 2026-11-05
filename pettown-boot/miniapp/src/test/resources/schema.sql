@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS pet (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     species VARCHAR(30) NOT NULL,
+    owner_id VARCHAR(31) NOT NULL,
     created_time TIMESTAMP NOT NULL,
-    updated_time TIMESTAMP NOT NULL
+    updated_time TIMESTAMP NOT NULL,
+    INDEX idx_pet_owner_id (owner_id)
 );
