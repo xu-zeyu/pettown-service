@@ -1,6 +1,7 @@
 package com.pettown.miniapp.pet.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.pettown.business.pet.entity.Pet;
 import com.pettown.business.pet.mapper.PetMapper;
 import com.pettown.business.user.entity.User;
@@ -11,6 +12,7 @@ import com.pettown.common.mybatis.PageParam;
 import com.pettown.common.mybatis.PageResult;
 import com.pettown.miniapp.pet.dto.CreatePetProfileRequest;
 import com.pettown.miniapp.pet.vo.PetProfileResponse;
+import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,5 +65,23 @@ public class MiniappPetProfileService {
                         .eq(Pet::getId, id)
                         .eq(Pet::getOwnerId, ownerId))
                 .orElseThrow(() -> new BusinessException(ErrorCodeEnum.NOT_FOUND, "宠物不存在"));
+    }
+
+    @Transactional
+    public Pet update(String ownerId, Long id, CreatePetProfileRequest request) {
+        pets.update(null, new LambdaUpdateWrapper<Pet>()
+                .eq(Pet::getId, id)
+                .eq(Pet::getOwnerId, ownerId)
+                .set(Pet::getName, request.name().trim())
+                .set(Pet::getSpecies, request.species().name())
+                .set(Pet::getBreed, request.breed())
+                .set(Pet::getGender, request.gender())
+                .set(Pet::getBirthDate, request.birthDate())
+                .set(Pet::getWeightKg, request.weightKg())
+                .set(Pet::getSterilized, request.sterilized())
+                .set(Pet::getAvatarUrl, request.avatarUrl())
+                .set(Pet::getUpdatedTime, LocalDateTime.now()));
+        // 数据库驱动可能把未改变值的更新计为 0 行；按相同归属条件回读统一判定存在性。
+        return get(ownerId, id);
     }
 }
