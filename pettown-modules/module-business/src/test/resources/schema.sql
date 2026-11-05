@@ -10,6 +10,12 @@ CREATE TABLE IF NOT EXISTS pet (
     name VARCHAR(50) NOT NULL,
     species VARCHAR(30) NOT NULL,
     owner_id VARCHAR(31) NOT NULL,
+    breed VARCHAR(100),
+    gender VARCHAR(16),
+    birth_date DATE,
+    weight_kg DECIMAL(5,2),
+    sterilized BOOLEAN,
+    avatar_url VARCHAR(2048),
     created_time TIMESTAMP NOT NULL,
     updated_time TIMESTAMP NOT NULL,
     INDEX idx_pet_owner_id (owner_id)
