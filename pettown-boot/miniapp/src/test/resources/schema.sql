@@ -20,3 +20,15 @@ CREATE TABLE IF NOT EXISTS pet (
     updated_time TIMESTAMP NOT NULL,
     INDEX idx_pet_owner_id (owner_id)
 );
+CREATE TABLE IF NOT EXISTS pet_health_record (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    pet_id BIGINT NOT NULL,
+    record_type VARCHAR(16) NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    record_date DATE NOT NULL,
+    notes VARCHAR(2000),
+    next_reminder_date DATE,
+    created_time TIMESTAMP NOT NULL,
+    updated_time TIMESTAMP NOT NULL,
+    INDEX idx_pet_health_record_pet_date (pet_id, record_date, id)
+);
