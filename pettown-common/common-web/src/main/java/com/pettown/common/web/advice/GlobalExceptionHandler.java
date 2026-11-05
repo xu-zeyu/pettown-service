@@ -73,8 +73,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Result<Void>> handleBusinessException(BusinessException e) {
         // 预期内的业务失败仅在排查时记录，不输出堆栈。
         log.debug("业务异常 - 错误码: {}, 错误信息: {}", e.getCommonErrorCode().getCode(), e.getMessage());
-        HttpStatus status = "404".equals(e.getCommonErrorCode().getCode())
-                ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+        HttpStatus status = switch (e.getCommonErrorCode().getCode()) {
+            case "404" -> HttpStatus.NOT_FOUND;
+            case "429" -> HttpStatus.TOO_MANY_REQUESTS;
+            default -> HttpStatus.BAD_REQUEST;
+        };
         return buildErrorResponse(status, e);
     }
 

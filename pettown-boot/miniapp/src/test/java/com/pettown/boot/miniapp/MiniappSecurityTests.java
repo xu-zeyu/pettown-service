@@ -6,10 +6,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.doThrow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pettown.business.verification.service.VerificationCodeService;
+import com.pettown.miniapp.verification.service.VerificationRequestLimiter;
 import com.pettown.common.result.Result;
+import com.pettown.common.exception.BusinessException;
+import com.pettown.common.exception.ErrorCodeEnum;
 import com.pettown.common.security.config.PetTownToken;
 import jakarta.servlet.http.Cookie;
 import java.util.concurrent.Callable;
@@ -38,6 +45,7 @@ class MiniappSecurityTests {
     @Autowired private MockMvc mvc;
     @Autowired private ObjectMapper json;
     @MockitoBean private VerificationCodeService verificationCodeService;
+    @MockitoBean private VerificationRequestLimiter verificationRequestLimiter;
 
     @Test
     void loginAndVerificationRemainPublicAndUserInfoRequiresAUserToken() throws Exception {
@@ -56,6 +64,69 @@ class MiniappSecurityTests {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.phone").value("13800138000"));
         mvc.perform(get("/api/miniapp/user/me"))
                 .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("401"));
+    }
+
+    @Test
+    void redisOnlyVerificationEndpointIsPublicAndDoesNotClaimSmsWasSent() throws Exception {
+        mvc.perform(post("/api/miniapp/verification/send").contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"phone":"13800138000","type":"LOGIN_REGISTER"}
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.msg").value("验证码已写入 Redis，未发送短信"))
+                .andExpect(jsonPath("$.data").isEmpty());
+    }
+
+    @Test
+    void rejectsMalformedPhoneAndAdminPurposeWithoutReservingQuota() throws Exception {
+        mvc.perform(post("/api/miniapp/verification/send").contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"phone":"bad","type":"LOGIN_REGISTER"}
+                        """))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/miniapp/verification/send").contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"phone":"13800138000","type":"ADMIN_LOGIN"}
+                        """))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(verificationRequestLimiter, verificationCodeService);
+    }
+
+    @Test
+    void legacyAndNewPathsShareTheSameLimiter() throws Exception {
+        String body = """
+                {"phone":"13800138000","type":"LOGIN_REGISTER"}
+                """;
+        for (String path : new String[]{"/api/miniapp/verification/code", "/api/miniapp/verification/send"}) {
+            mvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isOk());
+        }
+        verify(verificationRequestLimiter, times(2)).checkAndRecord("13800138000", "127.0.0.1");
+    }
+
+    @Test
+    void returnsExplicitRateLimitCodeWithoutGeneratingCode() throws Exception {
+        doThrow(new BusinessException(ErrorCodeEnum.TOO_MANY_REQUESTS, "同一手机号 60 秒内只能获取一次验证码"))
+                .when(verificationRequestLimiter).checkAndRecord("13800138000", "127.0.0.1");
+        mvc.perform(post("/api/miniapp/verification/send").contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"phone":"13800138000","type":"LOGIN_REGISTER"}
+                        """))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("429"));
+        verifyNoInteractions(verificationCodeService);
+    }
+
+    @Test
+    void clientSuppliedForwardedHeaderCannotChooseTheIpQuotaKey() throws Exception {
+        mvc.perform(post("/api/miniapp/verification/send")
+                .header("Forwarded", "for=198.51.100.42")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"phone":"13800138000","type":"LOGIN_REGISTER"}
+                        """))
+                .andExpect(status().isOk());
+        verify(verificationRequestLimiter).checkAndRecord("13800138000", "127.0.0.1");
     }
 
     @Test

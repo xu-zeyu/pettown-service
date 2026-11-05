@@ -44,7 +44,8 @@ spring:
 
 server:
   port: ${SERVER_PORT:8082}
-  forward-headers-strategy: framework
+  # 验证码按来源地址限额；未配置受信任代理前，不采用客户端可伪造的 Forwarded 头。
+  forward-headers-strategy: none
 
 springdoc:
   packages-to-scan: com.pettown.miniapp
@@ -52,6 +53,9 @@ springdoc:
   default-flat-param-object: true
 
 pettown:
+  verification:
+    # 仅填写会覆盖 X-Real-IP 的可信反向代理直连地址；留空时始终使用 TCP 来源地址。
+    trusted-proxy-ips: ${PETTOWN_TRUSTED_PROXY_IPS:}
   redis:
     enabled: ${PETTOWN_REDIS_ENABLED:true}
   user:
