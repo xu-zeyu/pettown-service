@@ -40,7 +40,7 @@ class MiniappOpenApiTests {
                 operations++;
             }
         }
-        assertThat(operations).isEqualTo(9);
+        assertThat(operations).isEqualTo(10);
         assertThat(paths.path("/api/miniapp/auth/login").path("post").path("security").size()).isZero();
         assertThat(paths.path("/api/miniapp/user/me").path("get").path("security").get(0).has("bearerAuth")).isTrue();
         assertThat(paths.path("/api/miniapp/pets").path("post").path("security").get(0).has("bearerAuth")).isTrue();
@@ -48,6 +48,8 @@ class MiniappOpenApiTests {
         assertThat(paths.path("/api/miniapp/pets/{id}").path("get").path("security").get(0).has("bearerAuth")).isTrue();
         assertThat(paths.path("/api/miniapp/pets/{id}").path("put").path("security").get(0).has("bearerAuth")).isTrue();
         assertThat(paths.path("/api/miniapp/pets/{petId}/health-records").path("post")
+                .path("security").get(0).has("bearerAuth")).isTrue();
+        assertThat(paths.path("/api/miniapp/pets/{petId}/health-records").path("get")
                 .path("security").get(0).has("bearerAuth")).isTrue();
     }
 
