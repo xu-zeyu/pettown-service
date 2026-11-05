@@ -2,12 +2,13 @@ package com.pettown.business.user.service.impl;
 
 import com.pettown.business.user.entity.User;
 import com.pettown.business.user.mapper.UserMapper;
+import com.pettown.business.user.service.LoginFailureGuard;
 import com.pettown.business.user.service.UserAuthService;
 import com.pettown.business.verification.service.VerificationCodeService;
 import com.pettown.common.commonEnum.UserSourceEnum;
+import com.pettown.common.commonEnum.VerificationCodeTypeEnum;
 import com.pettown.common.exception.BusinessException;
 import com.pettown.common.exception.ErrorCodeEnum;
-import com.pettown.common.commonEnum.VerificationCodeTypeEnum;
 import com.pettown.common.utils.PasswordService;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -24,12 +25,14 @@ public class UserAuthServiceImpl implements UserAuthService {
     private final UserMapper userMapper;
     private final VerificationCodeService verificationCodeService;
     private final PasswordService passwordService;
+    private final LoginFailureGuard loginFailureGuard;
 
     public UserAuthServiceImpl(UserMapper userMapper, VerificationCodeService verificationCodeService,
-            PasswordService passwordService) {
+            PasswordService passwordService, LoginFailureGuard loginFailureGuard) {
         this.userMapper = userMapper;
         this.verificationCodeService = verificationCodeService;
         this.passwordService = passwordService;
+        this.loginFailureGuard = loginFailureGuard;
     }
 
     @Override
@@ -40,9 +43,14 @@ public class UserAuthServiceImpl implements UserAuthService {
 
     @Override
     public User loginOrRegister(String phone, String password, String verificationCode, UserSourceEnum source) {
-        verificationCodeService.verifyAndConsume(phone, VerificationCodeTypeEnum.LOGIN_REGISTER, verificationCode);
+        try {
+            verificationCodeService.verifyAndConsume(phone, VerificationCodeTypeEnum.LOGIN_REGISTER, verificationCode);
+        } catch (BusinessException error) {
+            throw new BusinessException(ErrorCodeEnum.LOGIN_VERIFICATION_INVALID, error.getMessage());
+        }
         User existing = userMapper.findByPhone(phone).orElse(null);
         if (existing != null) {
+            loginFailureGuard.assertNotLocked(phone);
             return verifyPassword(existing, password);
         }
         String passwordHash = passwordService.passwordEncrypt(password);
@@ -55,6 +63,7 @@ public class UserAuthServiceImpl implements UserAuthService {
             } catch (DuplicateKeyException exception) {
                 User concurrentlyCreated = userMapper.findByPhone(phone).orElse(null);
                 if (concurrentlyCreated != null) {
+                    loginFailureGuard.assertNotLocked(phone);
                     return verifyPassword(concurrentlyCreated, password);
                 }
                 if (attempt == 2) {
@@ -67,8 +76,10 @@ public class UserAuthServiceImpl implements UserAuthService {
 
     private User verifyPassword(User user, String password) {
         if (!passwordService.passwordValid(password, user.getPasswordHash())) {
-            throw new BusinessException(ErrorCodeEnum.FAIL, "手机号或密码错误");
+            loginFailureGuard.recordPasswordFailure(user.getPhone());
+            throw new BusinessException(ErrorCodeEnum.LOGIN_PASSWORD_INVALID, "手机号或密码错误");
         }
+        loginFailureGuard.clear(user.getPhone());
         return user;
     }
 
