@@ -58,4 +58,26 @@ class AdminMigrationTests {
             database.shutdown();
         }
     }
+
+    @Test
+    void adminTestDataSetupIsIdempotentAndContainsNoRealPasswords() {
+        var database = new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2)
+                .setName("admin-seed;MODE=MySQL").addScript("admin-deployment.sql").build();
+        try {
+            // 种子过程可执行且幂等：重复执行两遍
+            var populator = new ResourceDatabasePopulator(new ClassPathResource("admin-test-data.sql"));
+            populator.execute(database);
+            populator.execute(database);
+            var jdbc = new JdbcTemplate(database);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM admin_account", Integer.class)).isEqualTo(1);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM admin_role", Integer.class)).isEqualTo(1);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM admin_role_permission", Integer.class)).isEqualTo(2);
+            assertThat(jdbc.queryForObject("SELECT username FROM admin_account", String.class)).isEqualTo("fixture_readonly");
+            // 不含真实密码：占位哈希原样保留，使用前必须重置
+            assertThat(jdbc.queryForObject("SELECT password_hash FROM admin_account", String.class))
+                    .isEqualTo("REPLACE-ME-PLACEHOLDER-HASH");
+        } finally {
+            database.shutdown();
+        }
+    }
 }
