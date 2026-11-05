@@ -29,6 +29,8 @@ project:
     project_id: "32445978"
     # TAPD 项目链接
     project_url: "https://www.tapd.cn/tapd_fe/32445978/story/list?categoryId=-1&useScene=storyList&groupType=&conf_id=1132445978001000064"
+    # 新需求默认负责人；入库前仍须在当前 TAPD 项目空间核对成员
+    default_owner: "徐泽宇"
 
   # 经核实的产品背景
   product:
