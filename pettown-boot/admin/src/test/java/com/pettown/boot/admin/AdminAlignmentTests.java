@@ -222,6 +222,65 @@ class AdminAlignmentTests {
     }
 
     @Test
+    void changingPasswordRevokesEveryExistingSessionAndRequiresTheNewPassword() throws Exception {
+        String otherToken = passwordLogin("fixture_root");
+        String replacement = "Fixture-Replaced-123!";
+
+        call("PUT", "/auth/password", rootToken,
+                Map.of("oldPassword", PASSWORD, "newPassword", replacement), 200);
+        call("GET", "/auth/me", rootToken, null, 401);
+        call("GET", "/auth/me", otherToken, null, 401);
+
+        service.generateLoginCode("fixture_root");
+        String key = "pettown:verification-code:admin_login:13700000000";
+        Object code = codes.get(key);
+        call("POST", "/auth/login", null,
+                Map.of("username", "fixture_root", "password", PASSWORD, "smsCode", code), 400);
+        assertThat(codes).containsEntry(key, code);
+        String freshToken = call("POST", "/auth/login", null,
+                Map.of("username", "fixture_root", "password", replacement, "smsCode", code), 200)
+                .path("data").path("token").asText();
+        assertThat(freshToken).isNotBlank();
+        call("GET", "/auth/me", freshToken, null, 200);
+    }
+
+    @Test
+    void initialPasswordOnlyAllowsSelfServiceUntilItIsChanged() throws Exception {
+        service.createAccount(1L, "fixture_initial", "初始账号", INITIAL_PASSWORD, "13900000000");
+        service.generateLoginCode("fixture_initial");
+        String key = "pettown:verification-code:admin_login:13900000000";
+        String token = call("POST", "/auth/login", null,
+                Map.of("username", "fixture_initial", "password", INITIAL_PASSWORD, "smsCode", codes.get(key)), 200)
+                .path("data").path("token").asText();
+
+        assertThat(call("GET", "/auth/me", token, null, 200).path("data").path("account")
+                .path("passwordChangeRequired").asBoolean()).isTrue();
+        call("GET", "/auth/menus", token, null, 403);
+        call("GET", "/system/accounts", token, null, 403);
+        call("PUT", "/auth/password", token,
+                Map.of("oldPassword", INITIAL_PASSWORD, "newPassword", PASSWORD), 200);
+        call("GET", "/auth/me", token, null, 401);
+
+        service.generateLoginCode("fixture_initial");
+        String freshToken = call("POST", "/auth/login", null,
+                Map.of("username", "fixture_initial", "password", PASSWORD, "smsCode", codes.get(key)), 200)
+                .path("data").path("token").asText();
+        assertThat(call("GET", "/auth/me", freshToken, null, 200).path("data").path("account")
+                .path("passwordChangeRequired").asBoolean()).isFalse();
+        call("GET", "/auth/menus", freshToken, null, 200);
+    }
+
+    @Test
+    void rejectedPasswordChangeDoesNotRevokeTheCurrentSession() throws Exception {
+        call("PUT", "/auth/password", rootToken,
+                Map.of("oldPassword", "Incorrect-Old-123!", "newPassword", "Fixture-Replaced-123!"), 400);
+        call("GET", "/auth/me", rootToken, null, 200);
+        call("PUT", "/auth/password", rootToken,
+                Map.of("oldPassword", PASSWORD, "newPassword", PASSWORD), 400);
+        call("GET", "/auth/me", rootToken, null, 200);
+    }
+
+    @Test
     void authenticatesAnAdministratorWithAnExistingBcryptHash() throws Exception {
         var admin = service.createAdmin(1L, "fixture_legacy", PASSWORD, "13800000000", null, null);
         admin.setPasswordHash(new BCryptPasswordEncoder().encode(PASSWORD));
