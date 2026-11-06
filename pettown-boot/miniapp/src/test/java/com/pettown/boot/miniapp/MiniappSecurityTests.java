@@ -13,6 +13,7 @@ import static org.mockito.Mockito.doThrow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pettown.business.verification.service.VerificationCodeService;
+import com.pettown.business.user.service.LoginFailureGuard;
 import com.pettown.miniapp.verification.service.VerificationRequestLimiter;
 import com.pettown.common.result.Result;
 import com.pettown.common.exception.BusinessException;
@@ -47,6 +48,7 @@ class MiniappSecurityTests {
     @Autowired private ObjectMapper json;
     @Autowired private JdbcTemplate jdbc;
     @MockitoBean private VerificationCodeService verificationCodeService;
+    @MockitoBean private LoginFailureGuard loginFailureGuard;
     @MockitoBean private VerificationRequestLimiter verificationRequestLimiter;
 
     @Test
@@ -66,6 +68,41 @@ class MiniappSecurityTests {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.phone").value("13800138000"));
         mvc.perform(get("/api/miniapp/user/me"))
                 .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("401"));
+    }
+
+    @Test
+    void logoutRevokesCurrentUserTokenAndRequiresAValidUserSession() throws Exception {
+        String body = """
+                {"phone":"13800138000","password":"Fixture-Password-123!","verificationCode":"000007"}
+                """;
+        String login = mvc.perform(post("/api/miniapp/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String token = json.readTree(login).path("data").path("token").asText();
+        mvc.perform(post("/api/miniapp/auth/logout")).andExpect(status().isUnauthorized());
+        String adminToken = PetTownToken.ADMIN.createLoginSession(100L);
+        mvc.perform(post("/api/miniapp/auth/logout")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/miniapp/auth/logout")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.code").value("200"));
+        mvc.perform(get("/api/miniapp/user/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/miniapp/pets")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/miniapp/auth/logout")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+        String freshLogin = mvc.perform(post("/api/miniapp/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String freshToken = json.readTree(freshLogin).path("data").path("token").asText();
+        mvc.perform(get("/api/miniapp/user/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + freshToken))
+                .andExpect(status().isOk());
     }
 
     @Test
