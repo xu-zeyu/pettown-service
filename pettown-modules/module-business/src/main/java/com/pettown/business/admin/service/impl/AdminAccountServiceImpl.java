@@ -5,6 +5,7 @@ import static com.pettown.business.admin.service.impl.AdminValidations.validateN
 import static com.pettown.business.admin.service.impl.AdminValidations.validatePassword;
 import static com.pettown.business.admin.service.impl.AdminValidations.validatePhone;
 import static com.pettown.business.admin.service.impl.AdminValidations.validateUsername;
+import static com.pettown.business.admin.service.impl.AdminValidations.validateV1Password;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -211,9 +212,23 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     @Override
     @Transactional
     public void resetPassword(Long actorId, Long id, String password) {
+        resetPasswordInternal(actorId, id, password, false);
+    }
+
+    @Override
+    @Transactional
+    public void resetV1Password(Long actorId, Long id, String password) {
+        resetPasswordInternal(actorId, id, password, true);
+    }
+
+    private void resetPasswordInternal(Long actorId, Long id, String password, boolean v1) {
         policy.authorizeWrite(actorId, AdminPermissionCodes.ACCOUNT_RESET_PASSWORD);
         AdminAccount account = policy.requireManageableAccount(actorId, id);
-        validatePassword(password);
+        if (v1) {
+            validateV1Password(password);
+        } else {
+            validatePassword(password);
+        }
         account.setPasswordHash(passwordService.passwordEncrypt(password));
         account.setPasswordChangeRequired(true);
         account.setSessionVersion(account.getSessionVersion() + 1);
@@ -223,13 +238,27 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     @Override
     @Transactional
     public void changePassword(Long id, String oldPassword, String newPassword) {
+        changePasswordInternal(id, oldPassword, newPassword, false);
+    }
+
+    @Override
+    @Transactional
+    public void changeV1Password(Long id, String oldPassword, String newPassword) {
+        changePasswordInternal(id, oldPassword, newPassword, true);
+    }
+
+    private void changePasswordInternal(Long id, String oldPassword, String newPassword, boolean v1) {
         policy.lockAdministration();
         AdminAccount account = policy.requireAccount(id);
         if (!Boolean.TRUE.equals(account.getEnabled())
                 || !passwordService.passwordValid(oldPassword, account.getPasswordHash())) {
             throw failure("原密码错误");
         }
-        validatePassword(newPassword);
+        if (v1) {
+            validateV1Password(newPassword);
+        } else {
+            validatePassword(newPassword);
+        }
         if (passwordService.passwordValid(newPassword, account.getPasswordHash())) {
             throw failure("新密码不能与原密码相同");
         }

@@ -754,6 +754,77 @@ class AdminAlignmentTests {
     }
 
     @Test
+    void v1PasswordResetForcesChangeAndRevokesEveryOldSession() throws Exception {
+        var readRole = service.createNamedRole(1L, "重置账号读权限", null);
+        service.replaceRolePermissions(1L, readRole.getId(), List.of("system:account:read"));
+        var staff = service.createAdmin(1L, "fixture_reset_v1", PASSWORD, "13800000061", null, readRole.getId());
+        String first = passwordLogin("fixture_reset_v1");
+        String second = passwordLogin("fixture_reset_v1");
+        long version = staff.getSessionVersion();
+
+        resetV1Password(staff.getId(), rootToken, Map.of("password", "Reset-Password-456"), 200);
+        assertThat(service.getAccount(staff.getId()).getPasswordChangeRequired()).isTrue();
+        assertThat(service.getAccount(staff.getId()).getSessionVersion()).isGreaterThan(version);
+        currentAuth("/me", first, 401);
+        currentAuth("/me", second, 401);
+        String resetToken = loginWithPassword("fixture_reset_v1", "Reset-Password-456");
+        assertThat(currentAuth("/me", resetToken, 200).path("data").path("account")
+                .path("passwordChangeRequired").asBoolean()).isTrue();
+        currentAuth("/menus", resetToken, 403);
+        currentAccounts(resetToken, 403, Map.of());
+
+        changeV1Password(resetToken, Map.of("oldPassword", "wrong-password-123",
+                "newPassword", "Changed-Password-789"), 400);
+        changeV1Password(resetToken, Map.of("oldPassword", "Reset-Password-456",
+                "newPassword", "Onlyletters"), 400);
+        changeV1Password(resetToken, Map.of("oldPassword", "Reset-Password-456",
+                "newPassword", "Reset-Password-456"), 400);
+        changeV1Password(resetToken, Map.of("oldPassword", "Reset-Password-456",
+                "newPassword", "Changed-Password-789"), 200);
+        currentAuth("/me", resetToken, 401);
+        String fresh = loginWithPassword("fixture_reset_v1", "Changed-Password-789");
+        assertThat(currentAuth("/me", fresh, 200).path("data").path("account")
+                .path("passwordChangeRequired").asBoolean()).isFalse();
+        currentAccounts(fresh, 200, Map.of());
+    }
+
+    @Test
+    void v1PasswordRoutesRejectUnauthorizedTargetsAndWeakSecrets() throws Exception {
+        var noResetRole = service.createNamedRole(1L, "不能重置密码", null);
+        service.replaceRolePermissions(1L, noResetRole.getId(), List.of("system:account:read"));
+        var staff = service.createAdmin(1L, "fixture_reset_target", PASSWORD, "13800000062", null, null);
+        service.createAdmin(1L, "fixture_reset_denied", PASSWORD, "13800000063", null, noResetRole.getId());
+        String deniedToken = passwordLogin("fixture_reset_denied");
+        resetV1Password(staff.getId(), deniedToken, Map.of("password", "Reset-Password-456"), 403);
+        resetV1Password(staff.getId(), null, Map.of("password", "Reset-Password-456"), 401);
+        resetV1Password(staff.getId(), PetTownToken.USER.createLoginSession("fixture-reset-user"),
+                Map.of("password", "Reset-Password-456"), 401);
+        resetV1Password(1L, rootToken, Map.of("password", "Reset-Password-456"), 400);
+        resetV1Password(999999L, rootToken, Map.of("password", "Reset-Password-456"), 404);
+        resetV1Password(staff.getId(), rootToken, Map.of("password", "lettersOnly"), 400);
+        resetV1Password(staff.getId(), rootToken, Map.of("password", "1".repeat(65) + "a"), 400);
+        changeV1Password(null, Map.of("oldPassword", PASSWORD, "newPassword", "Changed-Password-789"), 401);
+        changeV1Password(PetTownToken.USER.createLoginSession("fixture-change-user"),
+                Map.of("oldPassword", PASSWORD, "newPassword", "Changed-Password-789"), 401);
+
+        var operatorRole = service.createNamedRole(1L, "只重置低权限账号", null);
+        var higherRole = service.createNamedRole(1L, "更高权限目标", null);
+        service.replaceRolePermissions(1L, operatorRole.getId(), List.of("system:account:reset-password"));
+        service.replaceRolePermissions(1L, higherRole.getId(), List.of("system:role:read"));
+        var operator = service.createAdmin(1L, "fixture_reset_operator", PASSWORD, "13800000064", null,
+                operatorRole.getId());
+        var higher = service.createAdmin(1L, "fixture_reset_higher", PASSWORD, "13800000065", null,
+                higherRole.getId());
+        String operatorToken = passwordLogin("fixture_reset_operator");
+        resetV1Password(operator.getId(), operatorToken, Map.of("password", "Reset-Password-456"), 400);
+        resetV1Password(higher.getId(), operatorToken, Map.of("password", "Reset-Password-456"), 400);
+        service.deleteAccount(1L, staff.getId());
+        resetV1Password(staff.getId(), rootToken, Map.of("password", "Reset-Password-456"), 404);
+        call("PUT", "/auth/password", deniedToken,
+                Map.of("oldPassword", PASSWORD, "newPassword", "a".repeat(65)), 200);
+    }
+
+    @Test
     void deletingAnAccountPreservesRoleAndPermissionsAndRevokesAllSessions() throws Exception {
         var role = service.createNamedRole(1L, "可共享角色", null);
         service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
@@ -825,9 +896,13 @@ class AdminAlignmentTests {
     }
 
     private String passwordLogin(String username) throws Exception {
+        return loginWithPassword(username, PASSWORD);
+    }
+
+    private String loginWithPassword(String username, String password) throws Exception {
         service.generateLoginCode(username);
         String key = "pettown:verification-code:admin_login:" + accounts.selectOne(AdminAccount::getUsername, username).getPhone();
-        return call("POST", "/auth/login", null, Map.of("username", username, "password", PASSWORD, "smsCode", codes.get(key)), 200)
+        return call("POST", "/auth/login", null, Map.of("username", username, "password", password, "smsCode", codes.get(key)), 200)
                 .path("data").path("token").asText();
     }
 
@@ -895,6 +970,27 @@ class AdminAlignmentTests {
         var response = mvc.perform(request).andReturn().getResponse();
         assertThat(response.getStatus()).as(method + " /api/admin/system/accounts" + path + ": "
                 + response.getContentAsString()).isEqualTo(expectedStatus);
+        return json.readTree(response.getContentAsString());
+    }
+
+    private JsonNode resetV1Password(Long id, String token, Object body, int expectedStatus) throws Exception {
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.post(
+                "/api/admin/system/accounts/" + id + "/reset-password")
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
+        if (token != null) request.header("Authorization", "Bearer " + token);
+        var response = mvc.perform(request).andReturn().getResponse();
+        assertThat(response.getStatus()).as("POST reset-password: " + response.getContentAsString())
+                .isEqualTo(expectedStatus);
+        return json.readTree(response.getContentAsString());
+    }
+
+    private JsonNode changeV1Password(String token, Object body, int expectedStatus) throws Exception {
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.post("/api/admin/auth/change-password")
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
+        if (token != null) request.header("Authorization", "Bearer " + token);
+        var response = mvc.perform(request).andReturn().getResponse();
+        assertThat(response.getStatus()).as("POST change-password: " + response.getContentAsString())
+                .isEqualTo(expectedStatus);
         return json.readTree(response.getContentAsString());
     }
 }

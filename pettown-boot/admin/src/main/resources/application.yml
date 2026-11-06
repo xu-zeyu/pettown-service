@@ -54,7 +54,9 @@ springdoc:
     - /mng/**
     - /api/admin/auth/me
     - /api/admin/auth/menus
+    - /api/admin/auth/change-password
     - /api/admin/system/accounts
     - /api/admin/system/accounts/{id}
     - /api/admin/system/accounts/{id}/status
+    - /api/admin/system/accounts/{id}/reset-password
   default-flat-param-object: true

@@ -50,8 +50,14 @@ public interface AdminAccountService {
     /** 重置密码；使全部旧会话失效，下次登录必须修改密码。 */
     void resetPassword(Long actorId, Long id, String password);
 
+    /** v1 管理端重置密码：采用 8–64 位字母+数字规则，令旧会话失效并强制下次改密。 */
+    void resetV1Password(Long actorId, Long id, String password);
+
     /** 本人改密；校验原密码后更新，使全部旧会话失效。 */
     void changePassword(Long id, String oldPassword, String newPassword);
+
+    /** v1 管理端本人改密：采用 8–64 位字母+数字规则。 */
+    void changeV1Password(Long id, String oldPassword, String newPassword);
 
     /** 记录最近登录时间。 */
     void recordLogin(Long id);

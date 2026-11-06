@@ -38,8 +38,9 @@ class AdminOpenApiTests {
         int operations = 0;
         for (var entry : paths.properties()) {
             assertThat(entry.getKey().startsWith("/mng/")
-                    || Set.of("/api/admin/auth/me", "/api/admin/auth/menus", "/api/admin/system/accounts",
-                            "/api/admin/system/accounts/{id}", "/api/admin/system/accounts/{id}/status")
+                    || Set.of("/api/admin/auth/me", "/api/admin/auth/menus", "/api/admin/auth/change-password",
+                            "/api/admin/system/accounts", "/api/admin/system/accounts/{id}",
+                            "/api/admin/system/accounts/{id}/status", "/api/admin/system/accounts/{id}/reset-password")
                             .contains(entry.getKey())).isTrue();
             for (JsonNode operation : entry.getValue()) {
                 assertThat(operation.path("summary").asText()).isNotBlank();
@@ -47,7 +48,7 @@ class AdminOpenApiTests {
                 operations++;
             }
         }
-        assertThat(operations).isEqualTo(46);
+        assertThat(operations).isEqualTo(48);
         assertThat(paths.path("/mng/create").path("post").path("description").asText()).contains("SHA-256");
         assertThat(paths.path("/mng/permission/batchSync").path("post").path("description").asText()).contains("SUB_ADMIN", "事务");
         assertThat(paths.path("/mng/auth/login").path("post").path("security").size()).isZero();
@@ -77,6 +78,15 @@ class AdminOpenApiTests {
         JsonNode deleteAccount = paths.path("/api/admin/system/accounts/{id}").path("delete");
         assertThat(deleteAccount.path("security").get(0).has("bearerAuth")).isTrue();
         assertThat(deleteAccount.path("description").asText()).contains("system:account:delete");
+        JsonNode resetPassword = paths.path("/api/admin/system/accounts/{id}/reset-password").path("post");
+        assertThat(resetPassword.path("security").get(0).has("bearerAuth")).isTrue();
+        assertThat(resetPassword.path("description").asText()).contains("system:account:reset-password");
+        assertThat(paths.path("/api/admin/auth/change-password").path("post")
+                .path("security").get(0).has("bearerAuth")).isTrue();
+        assertThat(document.path("components").path("schemas").path("V1ResetPasswordRequest")
+                .path("properties").path("password").path("writeOnly").asBoolean()).isTrue();
+        assertThat(document.path("components").path("schemas").path("V1ChangePasswordRequest")
+                .path("properties").path("newPassword").path("writeOnly").asBoolean()).isTrue();
     }
 
     @Test

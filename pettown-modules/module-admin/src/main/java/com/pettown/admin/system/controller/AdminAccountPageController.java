@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.pettown.admin.system.dto.AdminAccountSearchRequest;
 import com.pettown.admin.system.dto.StatusRequest;
 import com.pettown.admin.system.dto.V1CreateAccountRequest;
+import com.pettown.admin.system.dto.V1ResetPasswordRequest;
 import com.pettown.admin.system.vo.AccountResponse;
 import com.pettown.business.admin.constant.AdminPermissionCodes;
 import com.pettown.business.admin.service.AdminService;
@@ -75,6 +76,16 @@ public class AdminAccountPageController {
     @Log("删除管理员账号")
     public Result<Void> delete(@PathVariable Long id) {
         service.deleteAccount(PetTownToken.ADMIN.getLoginIdAsLong(), id);
+        PetTownToken.ADMIN.logout(id);
+        return Result.success();
+    }
+
+    @PostMapping("/{id}/reset-password")
+    @Operation(summary = "重置管理员密码", description = "需要 system:account:reset-password；重置后该账号旧会话失效，下次登录须先改密")
+    @SaCheckPermission(value = AdminPermissionCodes.ACCOUNT_RESET_PASSWORD, type = "admin")
+    @Log("重置管理员密码")
+    public Result<Void> resetPassword(@PathVariable Long id, @Valid @RequestBody V1ResetPasswordRequest request) {
+        service.resetV1Password(PetTownToken.ADMIN.getLoginIdAsLong(), id, request.password());
         PetTownToken.ADMIN.logout(id);
         return Result.success();
     }
