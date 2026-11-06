@@ -21,7 +21,7 @@ public class AdminSessionInterceptor extends SaTokenDispatchInterceptor {
 
     /** 首次改密前仍可访问的个人信息/改密/退出路径。 */
     private static final Set<String> PASSWORD_CHANGE_EXEMPT_PATHS = Set.of(
-            "/mng/auth/me", "/mng/auth/logout", "/mng/auth/password");
+            "/mng/auth/me", "/mng/auth/logout", "/mng/auth/password", "/api/admin/auth/me");
 
     private final AdminService adminService;
 
