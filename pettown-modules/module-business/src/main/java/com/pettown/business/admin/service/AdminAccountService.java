@@ -18,6 +18,10 @@ public interface AdminAccountService {
 
     PageResult<AdminAccount> listAccounts(PageParam page, String keyword, Boolean enabled);
 
+    /** v1 管理端独立筛选：账号和显示名分别模糊匹配，状态和当前关联角色 ID 精确匹配。 */
+    PageResult<AdminAccount> searchAccounts(PageParam page, String username, String displayName,
+            Boolean enabled, Long roleId);
+
     /** 旧账号管理接口创建的账号须首次改密。 */
     AdminAccount createAccount(Long actorId, String username, String displayName, String password, String phone);
 

@@ -79,6 +79,21 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     }
 
     @Override
+    public PageResult<AdminAccount> searchAccounts(PageParam page, String username, String displayName,
+            Boolean enabled, Long roleId) {
+        var query = new LambdaQueryWrapper<AdminAccount>()
+                .eq(enabled != null, AdminAccount::getEnabled, enabled)
+                .eq(roleId != null, AdminAccount::getRoleId, roleId);
+        if (username != null && !username.isBlank()) {
+            query.like(AdminAccount::getUsername, username.trim());
+        }
+        if (displayName != null && !displayName.isBlank()) {
+            query.like(AdminAccount::getDisplayName, displayName.trim());
+        }
+        return PageResult.from(accounts.selectPage(page, query.orderByAsc(AdminAccount::getId)));
+    }
+
+    @Override
     @Transactional
     public AdminAccount createAccount(Long actorId, String username, String displayName, String password, String phone) {
         policy.authorizeWrite(actorId, AdminPermissionCodes.ACCOUNT_CREATE);

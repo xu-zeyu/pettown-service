@@ -535,6 +535,82 @@ class AdminAlignmentTests {
     }
 
     @Test
+    void currentAccountPageCombinesFiltersAndKeepsStablePageTotals() throws Exception {
+        var supportRole = service.createNamedRole(1L, "分页客服", null);
+        var managerRole = service.createNamedRole(1L, "分页主管", null);
+        var anna = service.createAdmin(1L, "fixture_page_anna", PASSWORD, "13800000031", "北区客服", supportRole.getId());
+        var ben = service.createAdmin(1L, "fixture_page_ben", PASSWORD, "13800000032", "南区客服", supportRole.getId());
+        var cora = service.createAdmin(1L, "fixture_page_cora", PASSWORD, "13800000033", "北区主管", managerRole.getId());
+        service.setAccountEnabled(1L, ben.getId(), false);
+
+        JsonNode first = currentAccounts(rootToken, 200,
+                Map.of("username", "fixture_page", "page", "1", "size", "2")).path("data");
+        assertThat(first.path("total").asLong()).isEqualTo(3);
+        assertThat(first.path("list").size()).isEqualTo(2);
+        assertThat(first.path("list").get(0).path("id").asLong()).isEqualTo(anna.getId());
+        assertThat(first.path("list").get(1).path("id").asLong()).isEqualTo(ben.getId());
+        JsonNode second = currentAccounts(rootToken, 200,
+                Map.of("username", "fixture_page", "page", "2", "size", "2")).path("data");
+        assertThat(second.path("total").asLong()).isEqualTo(3);
+        assertThat(second.path("list").size()).isEqualTo(1);
+        assertThat(second.path("list").get(0).path("id").asLong()).isEqualTo(cora.getId());
+        assertThat(currentAccounts(rootToken, 200,
+                Map.of("username", "fixture_page", "size", "-1")).path("data").path("list").size())
+                .isEqualTo(3);
+
+        assertThat(currentAccounts(rootToken, 200, Map.of("displayName", "北区")).path("data").path("list").size())
+                .isEqualTo(2);
+        JsonNode combined = currentAccounts(rootToken, 200, Map.of("username", "  page_ ",
+                "displayName", "北区", "enabled", "true", "roleId", supportRole.getId().toString()))
+                .path("data");
+        assertThat(combined.path("total").asLong()).isEqualTo(1);
+        assertThat(combined.path("list").get(0).path("id").asLong()).isEqualTo(anna.getId());
+        assertThat(combined.path("list").get(0).has("passwordHash")).isFalse();
+        assertThat(combined.path("list").get(0).has("sessionVersion")).isFalse();
+        JsonNode disabled = currentAccounts(rootToken, 200, Map.of("enabled", "false",
+                "roleId", supportRole.getId().toString())).path("data");
+        assertThat(disabled.path("total").asLong()).isEqualTo(1);
+        assertThat(disabled.path("list").get(0).path("id").asLong()).isEqualTo(ben.getId());
+        assertThat(currentAccounts(rootToken, 200, Map.of("roleId", "999999")).path("data").path("total").asLong())
+                .isZero();
+        currentAccounts(rootToken, 400, Map.of("page", "0"));
+        currentAccounts(rootToken, 400, Map.of("size", "0"));
+        currentAccounts(rootToken, 400, Map.of("roleId", "0"));
+        call("GET", "/system/accounts?keyword=fixture_page", rootToken, null, 200);
+    }
+
+    @Test
+    void currentAccountPageRequiresLiveAccountReadPermission() throws Exception {
+        currentAccounts(null, 401, Map.of());
+        currentAccounts(PetTownToken.USER.createLoginSession("fixture-page-user"), 401, Map.of());
+        var readerRole = service.createNamedRole(1L, "分页只读", null);
+        var deniedRole = service.createNamedRole(1L, "分页无权", null);
+        service.replaceRolePermissions(1L, readerRole.getId(), List.of("system:account:read"));
+        service.replaceRolePermissions(1L, deniedRole.getId(), List.of("system:role:read"));
+        var reader = service.createAdmin(1L, "fixture_page_reader", PASSWORD, "13800000034", null, readerRole.getId());
+        service.createAdmin(1L, "fixture_page_denied", PASSWORD, "13800000035", null, deniedRole.getId());
+        String readerToken = passwordLogin("fixture_page_reader");
+        String deniedToken = passwordLogin("fixture_page_denied");
+        currentAccounts(readerToken, 200, Map.of());
+        currentAccounts(deniedToken, 403, Map.of());
+        service.replaceRolePermissions(1L, readerRole.getId(), List.of());
+        currentAccounts(readerToken, 403, Map.of());
+        service.setAccountEnabled(1L, reader.getId(), false);
+        currentAccounts(readerToken, 401, Map.of());
+        service.setAccountEnabled(1L, reader.getId(), true);
+        currentAccounts(readerToken, 401, Map.of());
+
+        service.createAccount(1L, "fixture_page_initial", "初始账号", INITIAL_PASSWORD, "13800000036");
+        service.generateLoginCode("fixture_page_initial");
+        String key = "pettown:verification-code:admin_login:13800000036";
+        String initialToken = call("POST", "/auth/login", null,
+                Map.of("username", "fixture_page_initial", "password", INITIAL_PASSWORD, "smsCode", codes.get(key)), 200)
+                .path("data").path("token").asText();
+        currentAccounts(initialToken, 403, Map.of());
+        call("GET", "/system/accounts", rootToken, null, 200);
+    }
+
+    @Test
     void deletingAnAccountPreservesRoleAndPermissionsAndRevokesAllSessions() throws Exception {
         var role = service.createNamedRole(1L, "可共享角色", null);
         service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
@@ -643,5 +719,15 @@ class AdminAlignmentTests {
 
     private List<String> strings(JsonNode node) {
         return java.util.stream.StreamSupport.stream(node.spliterator(), false).map(JsonNode::asText).toList();
+    }
+
+    private JsonNode currentAccounts(String token, int expectedStatus, Map<String, String> query) throws Exception {
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get("/api/admin/system/accounts");
+        if (token != null) request.header("Authorization", "Bearer " + token);
+        query.forEach(request::param);
+        var response = mvc.perform(request).andReturn().getResponse();
+        assertThat(response.getStatus()).as("GET /api/admin/system/accounts: " + response.getContentAsString())
+                .isEqualTo(expectedStatus);
+        return json.readTree(response.getContentAsString());
     }
 }

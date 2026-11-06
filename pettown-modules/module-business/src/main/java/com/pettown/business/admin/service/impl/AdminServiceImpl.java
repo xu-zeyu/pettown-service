@@ -63,6 +63,12 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    public PageResult<AdminAccount> searchAccounts(PageParam page, String username, String displayName,
+            Boolean enabled, Long roleId) {
+        return accounts.searchAccounts(page, username, displayName, enabled, roleId);
+    }
+
+    @Override
     public AdminAccount createAccount(Long actorId, String username, String displayName, String password, String phone) {
         return accounts.createAccount(actorId, username, displayName, password, phone);
     }
