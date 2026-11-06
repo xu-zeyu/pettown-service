@@ -54,3 +54,5 @@ INSERT INTO admin_permission (name, code) SELECT '分配角色权限', 'system:r
 INSERT INTO admin_permission (name, code) SELECT '查看权限点', 'system:permission:read' WHERE NOT EXISTS (SELECT 1 FROM admin_permission WHERE code = 'system:permission:read');
 INSERT INTO admin_permission (name, code) SELECT '管理后台权限与子管理员', 'SUB_ADMIN' WHERE NOT EXISTS (SELECT 1 FROM admin_permission WHERE code = 'SUB_ADMIN');
 INSERT INTO admin_permission (name, code) SELECT '删除管理员', 'system:account:delete' WHERE NOT EXISTS (SELECT 1 FROM admin_permission WHERE code = 'system:account:delete');
+INSERT INTO admin_permission (name, code) SELECT '查看 C 端用户', 'biz:user:read' WHERE NOT EXISTS (SELECT 1 FROM admin_permission WHERE code = 'biz:user:read');
+INSERT INTO admin_permission (name, code) SELECT '封禁解封 C 端用户', 'biz:user:status' WHERE NOT EXISTS (SELECT 1 FROM admin_permission WHERE code = 'biz:user:status');

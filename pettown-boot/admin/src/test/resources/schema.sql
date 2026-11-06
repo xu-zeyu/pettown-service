@@ -1,4 +1,13 @@
 -- 管理后台基础表；部署前手工执行，不包含默认账号或密码。
+CREATE TABLE IF NOT EXISTS user_account (
+    id VARCHAR(31) NOT NULL PRIMARY KEY,
+    phone CHAR(11) NOT NULL UNIQUE,
+    password_hash VARCHAR(100) NOT NULL,
+    source VARCHAR(32) NOT NULL DEFAULT 'UNKNOWN',
+    status VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS admin_account (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
@@ -54,3 +63,5 @@ INSERT INTO admin_permission (name, code) SELECT '分配角色权限', 'system:r
 INSERT INTO admin_permission (name, code) SELECT '查看权限点', 'system:permission:read' WHERE NOT EXISTS (SELECT 1 FROM admin_permission WHERE code = 'system:permission:read');
 INSERT INTO admin_permission (name, code) SELECT '管理后台权限与子管理员', 'SUB_ADMIN' WHERE NOT EXISTS (SELECT 1 FROM admin_permission WHERE code = 'SUB_ADMIN');
 INSERT INTO admin_permission (name, code) SELECT '删除管理员', 'system:account:delete' WHERE NOT EXISTS (SELECT 1 FROM admin_permission WHERE code = 'system:account:delete');
+INSERT INTO admin_permission (name, code) SELECT '查看 C 端用户', 'biz:user:read' WHERE NOT EXISTS (SELECT 1 FROM admin_permission WHERE code = 'biz:user:read');
+INSERT INTO admin_permission (name, code) SELECT '封禁解封 C 端用户', 'biz:user:status' WHERE NOT EXISTS (SELECT 1 FROM admin_permission WHERE code = 'biz:user:status');

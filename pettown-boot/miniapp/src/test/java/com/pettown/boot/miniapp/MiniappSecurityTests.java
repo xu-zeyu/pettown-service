@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -44,6 +45,7 @@ import org.springframework.web.bind.annotation.RestController;
 class MiniappSecurityTests {
     @Autowired private MockMvc mvc;
     @Autowired private ObjectMapper json;
+    @Autowired private JdbcTemplate jdbc;
     @MockitoBean private VerificationCodeService verificationCodeService;
     @MockitoBean private VerificationRequestLimiter verificationRequestLimiter;
 
@@ -134,6 +136,7 @@ class MiniappSecurityTests {
         for (String path : new String[]{"/api/miniapp/security-probe", "/public/security-probe", "/security-probe"}) {
             mvc.perform(get(path)).andExpect(status().isUnauthorized());
         }
+        fixtureUser("fixture-probe-user", "13800138111");
         String token = PetTownToken.USER.createLoginSession("fixture-probe-user");
         mvc.perform(get("/security-probe").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk());
@@ -142,6 +145,7 @@ class MiniappSecurityTests {
     @Test
     void acceptsOnlyBearerHeadersAndRejectsAdminInvalidAndRevokedTokens() throws Exception {
         String path = "/api/miniapp/security-probe";
+        fixtureUser("fixture-header-user", "13800138112");
         String token = PetTownToken.USER.createLoginSession("fixture-header-user");
         mvc.perform(get(path).cookie(new Cookie("Authorization", "Bearer " + token)))
                 .andExpect(status().isUnauthorized());
@@ -159,12 +163,18 @@ class MiniappSecurityTests {
 
     @Test
     void completesAuthenticatedAsyncRequestsWithoutAuthenticatingAgain() throws Exception {
+        fixtureUser("fixture-async-user", "13800138113");
         String token = PetTownToken.USER.createLoginSession("fixture-async-user");
         mvc.perform(get("/security-probe/async")).andExpect(status().isUnauthorized());
         var result = mvc.perform(get("/security-probe/async")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(request().asyncStarted()).andReturn();
         mvc.perform(asyncDispatch(result)).andExpect(status().isOk()).andExpect(jsonPath("$.data").value("ok"));
+    }
+
+    private void fixtureUser(String id, String phone) {
+        jdbc.update("INSERT INTO user_account(id,phone,password_hash,source) VALUES (?,?,?,?)",
+                id, phone, "fixture-hash", "MINI_PROGRAM");
     }
 
     @TestConfiguration(proxyBeanMethods = false)

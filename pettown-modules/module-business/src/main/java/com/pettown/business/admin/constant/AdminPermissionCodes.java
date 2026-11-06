@@ -39,6 +39,10 @@ public final class AdminPermissionCodes {
     public static final String ROLE_ASSIGN_PERMISSION = "system:role:assign-permission";
     /** 查看权限点 */
     public static final String PERMISSION_READ = "system:permission:read";
+    /** 查看 C 端用户 */
+    public static final String USER_READ = "biz:user:read";
+    /** 封禁或解封 C 端用户 */
+    public static final String USER_STATUS = "biz:user:status";
     /** 管理后台权限与子管理员 */
     public static final String SUB_ADMIN = "SUB_ADMIN";
 
@@ -48,6 +52,6 @@ public final class AdminPermissionCodes {
                 ACCOUNT_READ, ACCOUNT_CREATE, ACCOUNT_UPDATE, ACCOUNT_STATUS,
                 ACCOUNT_RESET_PASSWORD, ACCOUNT_ASSIGN_ROLE, ACCOUNT_DELETE,
                 ROLE_READ, ROLE_CREATE, ROLE_UPDATE, ROLE_DELETE, ROLE_ASSIGN_PERMISSION,
-                PERMISSION_READ, SUB_ADMIN)));
+                PERMISSION_READ, USER_READ, USER_STATUS, SUB_ADMIN)));
     }
 }

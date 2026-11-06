@@ -61,4 +61,7 @@ springdoc:
     - /api/admin/system/accounts/{id}/reset-password
     - /api/admin/system/roles
     - /api/admin/system/roles/{id}
+    - /api/admin/users
+    - /api/admin/users/{id}
+    - /api/admin/users/{id}/status
   default-flat-param-object: true

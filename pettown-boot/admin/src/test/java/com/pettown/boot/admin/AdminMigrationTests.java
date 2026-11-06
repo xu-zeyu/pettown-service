@@ -43,7 +43,10 @@ class AdminMigrationTests {
     void freshDeploymentSqlMatchesTheSchemaUsedByHttpTests() throws Exception {
         String deployment = new ClassPathResource("admin-deployment.sql").getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
         String testSchema = new ClassPathResource("schema.sql").getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        assertThat(deployment).isEqualTo(testSchema);
+        // 管理端 HTTP 测试额外建 C 端用户表；管理员基础建表脚本仍只创建管理员表。
+        String adminOnlyTestSchema = testSchema.replaceFirst(
+                "(?s)CREATE TABLE IF NOT EXISTS user_account \\(.*?\\);\\n\\n", "");
+        assertThat(deployment).isEqualTo(adminOnlyTestSchema);
         var database = new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2)
                 .setName("admin-fresh;MODE=MySQL").addScript("admin-deployment.sql").build();
         try {
@@ -56,7 +59,7 @@ class AdminMigrationTests {
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM admin_account", Integer.class)).isZero();
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
                     + "WHERE TABLE_NAME='ADMIN_ACCOUNT' AND COLUMN_NAME='DELETED'", Integer.class)).isEqualTo(1);
-            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM admin_permission", Integer.class)).isEqualTo(14);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM admin_permission", Integer.class)).isEqualTo(16);
         } finally {
             database.shutdown();
         }
