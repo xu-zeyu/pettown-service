@@ -204,7 +204,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     public void deleteAccount(Long actorId, Long id) {
         policy.authorizeWrite(actorId, AdminPermissionCodes.ACCOUNT_DELETE);
         policy.requireManageableAccount(actorId, id);
-        // 账号只保存 role_id；删除账号不会删除角色或角色权限。
+        // @TableLogic 软删账号；角色及角色权限保留，账号旧 Token 由控制器注销或会话拦截器拒绝。
         accounts.deleteById(id);
     }
 

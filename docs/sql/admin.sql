@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS admin_account (
     super_admin BOOLEAN NOT NULL DEFAULT FALSE,
     password_change_required BOOLEAN NOT NULL DEFAULT TRUE,
     session_version BIGINT NOT NULL DEFAULT 0,
+    deleted INT NOT NULL DEFAULT 0,
     created_time TIMESTAMP NOT NULL,
     updated_time TIMESTAMP NOT NULL,
     INDEX idx_admin_account_role_id (role_id)

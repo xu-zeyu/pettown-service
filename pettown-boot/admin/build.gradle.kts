@@ -34,5 +34,8 @@ tasks.processTestResources {
     from(rootProject.file("docs/sql/admin-reference-alignment.sql")) {
         rename { "admin-migration.sql" }
     }
+    from(rootProject.file("docs/sql/admin-account-soft-delete-v1.0.0-alter.sql")) {
+        rename { "admin-account-soft-delete.sql" }
+    }
     from(rootProject.file("docs/sql/admin-test-data.sql"))
 }

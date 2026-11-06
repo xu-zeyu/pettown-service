@@ -1,6 +1,7 @@
 package com.pettown.boot.admin;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -32,6 +33,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -57,6 +59,7 @@ class AdminAlignmentTests {
     @Autowired private AdminService service;
     @Autowired private AdminAccountMapper accounts;
     @Autowired private AdminPermissionMapper permissions;
+    @Autowired private JdbcTemplate jdbc;
     @Autowired private SaTokenDao tokenDao;
     @MockitoBean private Cache cache;
     private final Map<String, Object> codes = new ConcurrentHashMap<>();
@@ -681,6 +684,76 @@ class AdminAlignmentTests {
     }
 
     @Test
+    void v1AccountStatusRevokesAllSessionsAndBlocksSelfAndSuperAdmin() throws Exception {
+        var staff = service.createAdmin(1L, "fixture_status_v1", PASSWORD, "13800000051", null, null);
+        String first = passwordLogin("fixture_status_v1");
+        String second = passwordLogin("fixture_status_v1");
+        long version = staff.getSessionVersion();
+
+        currentAccountMutation("PUT", "/" + staff.getId() + "/status", rootToken,
+                Map.of("enabled", false), 200);
+        assertThat(service.getAccount(staff.getId()).getEnabled()).isFalse();
+        assertThat(service.getAccount(staff.getId()).getSessionVersion()).isGreaterThan(version);
+        currentAuth("/me", first, 401);
+        currentAuth("/me", second, 401);
+        assertThatThrownBy(() -> service.generateLoginCode("fixture_status_v1"))
+                .isInstanceOf(com.pettown.common.exception.BusinessException.class);
+
+        currentAccountMutation("PUT", "/" + staff.getId() + "/status", rootToken,
+                Map.of("enabled", true), 200);
+        currentAuth("/me", first, 401);
+        currentAuth("/me", second, 401);
+        String fresh = passwordLogin("fixture_status_v1");
+        currentAuth("/me", fresh, 200);
+        currentAccountMutation("PUT", "/1/status", rootToken, Map.of("enabled", false), 400);
+        currentAccountMutation("DELETE", "/1", rootToken, null, 400);
+        currentAccountMutation("PUT", "/999999/status", rootToken, Map.of("enabled", false), 404);
+        currentAccountMutation("PUT", "/" + staff.getId() + "/status", rootToken, Map.of(), 400);
+        call("GET", "/system/accounts/" + staff.getId(), rootToken, null, 200);
+    }
+
+    @Test
+    void v1AccountDeleteIsSoftAndRequiresSpecificPermissions() throws Exception {
+        var readRole = service.createNamedRole(1L, "删除测试无权角色", null);
+        service.replaceRolePermissions(1L, readRole.getId(), List.of("system:account:read"));
+        var staff = service.createAdmin(1L, "fixture_soft_delete", PASSWORD, "13800000052", null, readRole.getId());
+        service.createAdmin(1L, "fixture_status_denied", PASSWORD, "13800000053", null, readRole.getId());
+        String targetToken = passwordLogin("fixture_soft_delete");
+        String deniedToken = passwordLogin("fixture_status_denied");
+        currentAccountMutation("PUT", "/" + staff.getId() + "/status", deniedToken,
+                Map.of("enabled", false), 403);
+        currentAccountMutation("DELETE", "/" + staff.getId(), deniedToken, null, 403);
+        currentAccountMutation("DELETE", "/" + staff.getId(), null, null, 401);
+        currentAccountMutation("DELETE", "/" + staff.getId(),
+                PetTownToken.USER.createLoginSession("fixture-delete-user"), null, 401);
+
+        var operatorRole = service.createNamedRole(1L, "启停删除操作角色", null);
+        service.replaceRolePermissions(1L, operatorRole.getId(),
+                List.of("system:account:status", "system:account:delete"));
+        var operator = service.createAdmin(1L, "fixture_self_operator", PASSWORD, "13800000054", null,
+                operatorRole.getId());
+        String operatorToken = passwordLogin("fixture_self_operator");
+        currentAccountMutation("PUT", "/" + operator.getId() + "/status", operatorToken,
+                Map.of("enabled", false), 400);
+        currentAccountMutation("DELETE", "/" + operator.getId(), operatorToken, null, 400);
+        currentAccountMutation("PUT", "/1/status", operatorToken, Map.of("enabled", false), 400);
+        currentAccountMutation("DELETE", "/1", operatorToken, null, 400);
+
+        currentAccountMutation("DELETE", "/" + staff.getId(), rootToken, null, 200);
+        assertThat(jdbc.queryForObject("SELECT deleted FROM admin_account WHERE id=?", Integer.class, staff.getId()))
+                .isEqualTo(1);
+        assertThat(service.findAccount(staff.getId())).isEmpty();
+        assertThat(service.getRole(readRole.getId())).isNotNull();
+        currentAuth("/me", targetToken, 401);
+        assertThatThrownBy(() -> service.generateLoginCode("fixture_soft_delete"))
+                .isInstanceOf(com.pettown.common.exception.BusinessException.class);
+        assertThat(currentAccounts(rootToken, 200, Map.of("username", "fixture_soft_delete"))
+                .path("data").path("total").asLong()).isZero();
+        call("GET", "/system/accounts/" + staff.getId(), rootToken, null, 404);
+        currentAccountMutation("DELETE", "/" + staff.getId(), rootToken, null, 404);
+    }
+
+    @Test
     void deletingAnAccountPreservesRoleAndPermissionsAndRevokesAllSessions() throws Exception {
         var role = service.createNamedRole(1L, "可共享角色", null);
         service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
@@ -692,6 +765,8 @@ class AdminAlignmentTests {
         call("DELETE", "/system/accounts/1", rootToken, null, 400);
         call("DELETE", "/system/accounts/" + staff.getId(), rootToken, null, 200);
         assertThat(service.findAccount(staff.getId())).isEmpty();
+        assertThat(jdbc.queryForObject("SELECT deleted FROM admin_account WHERE id=?", Integer.class, staff.getId()))
+                .isEqualTo(1);
         assertThat(service.getRole(role.getId())).isNotNull();
         assertThat(service.rolePermissions(role.getId())).containsExactly("system:account:read");
         assertThat(service.getAccount(other.getId()).getRoleId()).isEqualTo(role.getId());
@@ -808,6 +883,18 @@ class AdminAlignmentTests {
         var response = mvc.perform(request).andReturn().getResponse();
         assertThat(response.getStatus()).as("POST /api/admin/system/accounts: " + response.getContentAsString())
                 .isEqualTo(expectedStatus);
+        return json.readTree(response.getContentAsString());
+    }
+
+    private JsonNode currentAccountMutation(String method, String path, String token, Object body,
+            int expectedStatus) throws Exception {
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.request(
+                org.springframework.http.HttpMethod.valueOf(method), "/api/admin/system/accounts" + path);
+        if (token != null) request.header("Authorization", "Bearer " + token);
+        if (body != null) request.contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
+        var response = mvc.perform(request).andReturn().getResponse();
+        assertThat(response.getStatus()).as(method + " /api/admin/system/accounts" + path + ": "
+                + response.getContentAsString()).isEqualTo(expectedStatus);
         return json.readTree(response.getContentAsString());
     }
 }

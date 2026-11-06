@@ -38,7 +38,8 @@ class AdminOpenApiTests {
         int operations = 0;
         for (var entry : paths.properties()) {
             assertThat(entry.getKey().startsWith("/mng/")
-                    || Set.of("/api/admin/auth/me", "/api/admin/auth/menus", "/api/admin/system/accounts")
+                    || Set.of("/api/admin/auth/me", "/api/admin/auth/menus", "/api/admin/system/accounts",
+                            "/api/admin/system/accounts/{id}", "/api/admin/system/accounts/{id}/status")
                             .contains(entry.getKey())).isTrue();
             for (JsonNode operation : entry.getValue()) {
                 assertThat(operation.path("summary").asText()).isNotBlank();
@@ -46,7 +47,7 @@ class AdminOpenApiTests {
                 operations++;
             }
         }
-        assertThat(operations).isEqualTo(44);
+        assertThat(operations).isEqualTo(46);
         assertThat(paths.path("/mng/create").path("post").path("description").asText()).contains("SHA-256");
         assertThat(paths.path("/mng/permission/batchSync").path("post").path("description").asText()).contains("SUB_ADMIN", "事务");
         assertThat(paths.path("/mng/auth/login").path("post").path("security").size()).isZero();
@@ -70,6 +71,12 @@ class AdminOpenApiTests {
         assertThat(createAccount.path("description").asText()).contains("system:account:create", "4091");
         assertThat(document.path("components").path("schemas").path("V1CreateAccountRequest")
                 .path("properties").path("password").path("writeOnly").asBoolean()).isTrue();
+        JsonNode statusAccount = paths.path("/api/admin/system/accounts/{id}/status").path("put");
+        assertThat(statusAccount.path("security").get(0).has("bearerAuth")).isTrue();
+        assertThat(statusAccount.path("description").asText()).contains("system:account:status");
+        JsonNode deleteAccount = paths.path("/api/admin/system/accounts/{id}").path("delete");
+        assertThat(deleteAccount.path("security").get(0).has("bearerAuth")).isTrue();
+        assertThat(deleteAccount.path("description").asText()).contains("system:account:delete");
     }
 
     @Test
