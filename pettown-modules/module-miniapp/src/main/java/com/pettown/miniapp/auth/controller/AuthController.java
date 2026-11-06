@@ -12,6 +12,7 @@ import com.pettown.common.web.util.UserSourceResolver;
 import com.pettown.miniapp.auth.dto.AuthRequest;
 import com.pettown.miniapp.auth.vo.AuthResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -41,6 +42,14 @@ public class AuthController {
         User user = userAuthService.loginOrRegister(request.phone(), request.password(), request.verificationCode(),
                 UserSourceResolver.resolve(httpRequest));
         return Result.success(issueToken(user));
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "退出登录", description = "注销当前 USER Token；原 Token 立即不能访问受保护接口")
+    @SecurityRequirement(name = "bearerAuth")
+    public Result<Void> logout() {
+        PetTownToken.USER.logout();
+        return Result.success();
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
