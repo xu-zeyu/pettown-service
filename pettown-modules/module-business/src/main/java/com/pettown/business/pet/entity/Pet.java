@@ -2,6 +2,7 @@ package com.pettown.business.pet.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.pettown.common.mybatis.model.BaseEntity;
 import lombok.Data;
@@ -27,6 +28,8 @@ public class Pet extends BaseEntity {
     private BigDecimal weightKg;
     private Boolean sterilized;
     private String avatarUrl;
+    @TableLogic
+    private Integer deleted;
 
     /** 兼容 App 端已有的基础宠物创建路径。 */
     public Pet(Long id, String name, String species, String ownerId) {

@@ -3,6 +3,8 @@ package com.pettown.miniapp.pet.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.pettown.business.pet.entity.Pet;
+import com.pettown.business.pet.entity.PetHealthRecord;
+import com.pettown.business.pet.mapper.PetHealthRecordMapper;
 import com.pettown.business.pet.mapper.PetMapper;
 import com.pettown.business.user.entity.User;
 import com.pettown.business.user.mapper.UserMapper;
@@ -21,10 +23,12 @@ public class MiniappPetProfileService {
     private static final long PET_LIMIT = 20;
     private final UserMapper users;
     private final PetMapper pets;
+    private final PetHealthRecordMapper records;
 
-    public MiniappPetProfileService(UserMapper users, PetMapper pets) {
+    public MiniappPetProfileService(UserMapper users, PetMapper pets, PetHealthRecordMapper records) {
         this.users = users;
         this.pets = pets;
+        this.records = records;
     }
 
     @Transactional
@@ -83,5 +87,22 @@ public class MiniappPetProfileService {
                 .set(Pet::getUpdatedTime, LocalDateTime.now()));
         // 数据库驱动可能把未改变值的更新计为 0 行；按相同归属条件回读统一判定存在性。
         return get(ownerId, id);
+    }
+
+    @Transactional
+    public void delete(String ownerId, Long id) {
+        Pet pet = pets.selectOne(new LambdaQueryWrapper<Pet>()
+                .eq(Pet::getId, id)
+                .eq(Pet::getOwnerId, ownerId)
+                .last("FOR UPDATE"));
+        if (pet == null) {
+            throw new BusinessException(ErrorCodeEnum.NOT_FOUND, "宠物不存在");
+        }
+        records.delete(new LambdaQueryWrapper<PetHealthRecord>().eq(PetHealthRecord::getPetId, pet.getId()));
+        if (pets.delete(new LambdaQueryWrapper<Pet>()
+                .eq(Pet::getId, pet.getId())
+                .eq(Pet::getOwnerId, ownerId)) != 1) {
+            throw new BusinessException(ErrorCodeEnum.NOT_FOUND, "宠物不存在");
+        }
     }
 }
