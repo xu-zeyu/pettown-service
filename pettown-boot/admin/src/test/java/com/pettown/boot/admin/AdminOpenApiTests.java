@@ -41,7 +41,8 @@ class AdminOpenApiTests {
                     || Set.of("/api/admin/auth/me", "/api/admin/auth/menus", "/api/admin/auth/change-password",
                             "/api/admin/system/accounts", "/api/admin/system/accounts/{id}",
                             "/api/admin/system/accounts/{id}/status", "/api/admin/system/accounts/{id}/reset-password",
-                            "/api/admin/system/roles", "/api/admin/system/roles/{id}")
+                            "/api/admin/system/roles", "/api/admin/system/roles/{id}",
+                            "/api/admin/users", "/api/admin/users/{id}", "/api/admin/users/{id}/status")
                             .contains(entry.getKey())).isTrue();
             for (JsonNode operation : entry.getValue()) {
                 assertThat(operation.path("summary").asText()).isNotBlank();
@@ -49,7 +50,7 @@ class AdminOpenApiTests {
                 operations++;
             }
         }
-        assertThat(operations).isEqualTo(53);
+        assertThat(operations).isEqualTo(56);
         assertThat(paths.path("/mng/create").path("post").path("description").asText()).contains("SHA-256");
         assertThat(paths.path("/mng/permission/batchSync").path("post").path("description").asText()).contains("SUB_ADMIN", "事务");
         assertThat(paths.path("/mng/auth/login").path("post").path("security").size()).isZero();
@@ -103,6 +104,18 @@ class AdminOpenApiTests {
         assertThat(roleItem.path("get").path("description").asText()).contains("system:role:read");
         assertThat(roleItem.path("put").path("description").asText()).contains("system:role:update");
         assertThat(roleItem.path("delete").path("description").asText()).contains("system:role:delete");
+        for (String path : Set.of("/api/admin/users", "/api/admin/users/{id}")) {
+            JsonNode operation = paths.path(path).path("get");
+            assertThat(operation.path("security").get(0).has("bearerAuth")).isTrue();
+            assertThat(operation.path("description").asText()).contains("biz:user:read");
+        }
+        JsonNode userStatus = paths.path("/api/admin/users/{id}/status").path("put");
+        assertThat(paths.path("/api/admin/users").path("get").path("parameters").findValuesAsText("name"))
+                .contains("page", "size", "phone", "source").doesNotContain("sizeValid");
+        assertThat(userStatus.path("security").get(0).has("bearerAuth")).isTrue();
+        assertThat(userStatus.path("description").asText()).contains("biz:user:status");
+        assertThat(document.path("components").path("schemas").path("AdminUserResponse")
+                .path("properties").has("passwordHash")).isFalse();
     }
 
     @Test

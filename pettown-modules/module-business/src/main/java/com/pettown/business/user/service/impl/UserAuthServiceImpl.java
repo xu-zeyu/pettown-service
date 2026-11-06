@@ -1,6 +1,7 @@
 package com.pettown.business.user.service.impl;
 
 import com.pettown.business.user.entity.User;
+import com.pettown.business.user.entity.UserStatus;
 import com.pettown.business.user.mapper.UserMapper;
 import com.pettown.business.user.service.LoginFailureGuard;
 import com.pettown.business.user.service.UserAuthService;
@@ -78,6 +79,9 @@ public class UserAuthServiceImpl implements UserAuthService {
         if (!passwordService.passwordValid(password, user.getPasswordHash())) {
             loginFailureGuard.recordPasswordFailure(user.getPhone());
             throw new BusinessException(ErrorCodeEnum.LOGIN_PASSWORD_INVALID, "手机号或密码错误");
+        }
+        if (user.getStatus() == UserStatus.BANNED) {
+            throw new BusinessException(ErrorCodeEnum.FAIL, "账号已封禁");
         }
         loginFailureGuard.clear(user.getPhone());
         return user;

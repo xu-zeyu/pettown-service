@@ -6,11 +6,15 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pettown.business.user.mapper.UserMapper;
+import com.pettown.business.user.entity.User;
+import com.pettown.business.user.entity.UserStatus;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.pettown.business.user.service.LoginFailureGuard;
 import com.pettown.business.verification.service.VerificationCodeService;
 import com.pettown.common.commonEnum.UserSourceEnum;
@@ -132,6 +136,28 @@ class RegistrationSourceApiTests {
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         String token = json.readTree(response).path("data").path("token").asText();
         assertThat(PetTownToken.USER.getTokenTimeout(token)).isBetween(604790L, 604800L);
+    }
+
+    @Test
+    void bannedUserCannotLoginAndExistingTokenIsRejectedUntilFreshLoginAfterUnban() throws Exception {
+        String response = mockMvc.perform(post("/api/miniapp/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON).content(LOGIN_BODY))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String token = json.readTree(response).path("data").path("token").asText();
+        userMapper.update(null, new LambdaUpdateWrapper<User>()
+                .eq(User::getPhone, PHONE).set(User::getStatus, UserStatus.BANNED));
+        mockMvc.perform(get("/api/miniapp/user/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/miniapp/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON).content(LOGIN_BODY))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.msg").value("账号已封禁"));
+        userMapper.update(null, new LambdaUpdateWrapper<User>()
+                .eq(User::getPhone, PHONE).set(User::getStatus, UserStatus.ACTIVE));
+        mockMvc.perform(get("/api/miniapp/user/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/miniapp/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON).content(LOGIN_BODY))
+                .andExpect(status().isOk());
     }
 
     @ParameterizedTest

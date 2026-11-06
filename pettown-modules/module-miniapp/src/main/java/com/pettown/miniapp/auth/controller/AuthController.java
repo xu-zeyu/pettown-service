@@ -2,8 +2,10 @@ package com.pettown.miniapp.auth.controller;
 
 import cn.dev33.satoken.annotation.SaIgnore;
 import com.pettown.business.user.entity.User;
+import com.pettown.business.user.entity.UserStatus;
 import com.pettown.business.user.service.UserAuthService;
 import com.pettown.common.exception.ErrorCodeEnum;
+import com.pettown.common.exception.BusinessException;
 import com.pettown.common.result.Result;
 import com.pettown.common.security.config.PetTownToken;
 import com.pettown.common.web.util.UserSourceResolver;
@@ -51,6 +53,9 @@ public class AuthController {
     }
 
     private AuthResponse issueToken(User user) {
+        if (userAuthService.getById(user.getId()).getStatus() == UserStatus.BANNED) {
+            throw new BusinessException(ErrorCodeEnum.FAIL, "账号已封禁");
+        }
         PetTownToken.USER.login(user.getId());
         return new AuthResponse(user.getId(), user.getPhone(), PetTownToken.USER.getTokenValue());
     }

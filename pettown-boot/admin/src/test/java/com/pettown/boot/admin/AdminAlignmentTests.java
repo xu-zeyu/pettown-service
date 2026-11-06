@@ -49,7 +49,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Import(AdminAlignmentTests.TokenStorage.class)
 @Sql(statements = {
         "DELETE FROM admin_role_permission", "DELETE FROM admin_account",
-        "DELETE FROM admin_role", "DELETE FROM admin_permission WHERE code NOT LIKE 'system:%' AND code <> 'SUB_ADMIN'"
+        "DELETE FROM admin_role", "DELETE FROM user_account",
+        "DELETE FROM admin_permission WHERE code NOT LIKE 'system:%' AND code NOT IN ('SUB_ADMIN','biz:user:read','biz:user:status')"
 })
 class AdminAlignmentTests {
     private static final String INITIAL_PASSWORD = "Fixture-Initial-123!";
@@ -914,6 +915,55 @@ class AdminAlignmentTests {
     }
 
     @Test
+    void v1UsersPageDetailAndBanRequireSeparatePermissions() throws Exception {
+        jdbc.update("INSERT INTO user_account(id,phone,password_hash,source,status,created_at) VALUES (?,?,?,?,?,CURRENT_TIMESTAMP)",
+                "pettown_user_a", "13800138101", "hash-a", "MINI_PROGRAM", "ACTIVE");
+        jdbc.update("INSERT INTO user_account(id,phone,password_hash,source,status,created_at) VALUES (?,?,?,?,?,CURRENT_TIMESTAMP)",
+                "pettown_user_b", "13800138102", "hash-b", "IOS", "ACTIVE");
+        JsonNode page = v1UserCall("GET", "", rootToken, null,
+                Map.of("phone", "13800138101", "source", "MINI_PROGRAM", "page", "1", "size", "1"), 200)
+                .path("data");
+        assertThat(page.path("total").asLong()).isEqualTo(1);
+        assertThat(page.path("list").get(0).path("id").asText()).isEqualTo("pettown_user_a");
+        JsonNode secondPage = v1UserCall("GET", "", rootToken, null,
+                Map.of("page", "2", "size", "1"), 200).path("data");
+        assertThat(secondPage.path("total").asLong()).isEqualTo(2);
+        assertThat(secondPage.path("list").size()).isEqualTo(1);
+        JsonNode detail = v1UserCall("GET", "/pettown_user_a", rootToken, null, Map.of(), 200).path("data");
+        assertThat(detail.path("phone").asText()).isEqualTo("13800138101");
+        assertThat(detail.has("passwordHash")).isFalse();
+        String userToken = PetTownToken.USER.createLoginSession("pettown_user_a");
+        String otherUserToken = PetTownToken.USER.createLoginSession("pettown_user_b");
+        v1UserCall("PUT", "/pettown_user_a/status", rootToken, Map.of("status", "BANNED"), Map.of(), 200);
+        assertThat(jdbc.queryForObject("SELECT status FROM user_account WHERE id='pettown_user_a'", String.class))
+                .isEqualTo("BANNED");
+        assertThat(PetTownToken.USER.getLoginIdByToken(userToken)).isNull();
+        assertThat(PetTownToken.USER.getLoginIdByToken(otherUserToken)).isEqualTo("pettown_user_b");
+        v1UserCall("PUT", "/pettown_user_a/status", rootToken, Map.of("status", "BANNED"), Map.of(), 200);
+        v1UserCall("PUT", "/pettown_user_a/status", rootToken, Map.of("status", "ACTIVE"), Map.of(), 200);
+        assertThat(PetTownToken.USER.getLoginIdByToken(userToken)).isNull();
+        v1UserCall("GET", "/missing", rootToken, null, Map.of(), 404);
+        v1UserCall("PUT", "/missing/status", rootToken, Map.of("status", "BANNED"), Map.of(), 404);
+        v1UserCall("GET", "", rootToken, null, Map.of("source", "BAD"), 400);
+        v1UserCall("PUT", "/pettown_user_a/status", rootToken, Map.of("status", "INVALID"), Map.of(), 400);
+        v1UserCall("GET", "", null, null, Map.of(), 401);
+        v1UserCall("GET", "", PetTownToken.USER.createLoginSession("pettown_user_b"), null, Map.of(), 401);
+
+        var role = service.createNamedRole(1L, "用户只读", null);
+        service.replaceRolePermissions(1L, role.getId(), List.of("biz:user:read"));
+        service.createAdmin(1L, "fixture_user_reader", PASSWORD, "13800000075", null, role.getId());
+        String reader = passwordLogin("fixture_user_reader");
+        v1UserCall("GET", "", reader, null, Map.of(), 200);
+        v1UserCall("PUT", "/pettown_user_b/status", reader, Map.of("status", "BANNED"), Map.of(), 403);
+        var managerRole = service.createNamedRole(1L, "用户状态操作员", null);
+        service.replaceRolePermissions(1L, managerRole.getId(), List.of("biz:user:status"));
+        service.createAdmin(1L, "fixture_user_manager", PASSWORD, "13800000076", null, managerRole.getId());
+        String manager = passwordLogin("fixture_user_manager");
+        v1UserCall("GET", "", manager, null, Map.of(), 403);
+        v1UserCall("PUT", "/pettown_user_b/status", manager, Map.of("status", "BANNED"), Map.of(), 200);
+    }
+
+    @Test
     void deletingAnAccountPreservesRoleAndPermissionsAndRevokesAllSessions() throws Exception {
         var role = service.createNamedRole(1L, "可共享角色", null);
         service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
@@ -1092,6 +1142,19 @@ class AdminAlignmentTests {
         query.forEach(request::param);
         var response = mvc.perform(request).andReturn().getResponse();
         assertThat(response.getStatus()).as(method + " /api/admin/system/roles" + path + ": "
+                + response.getContentAsString()).isEqualTo(expectedStatus);
+        return json.readTree(response.getContentAsString());
+    }
+
+    private JsonNode v1UserCall(String method, String path, String token, Object body,
+            Map<String, String> query, int expectedStatus) throws Exception {
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.request(
+                org.springframework.http.HttpMethod.valueOf(method), "/api/admin/users" + path);
+        if (token != null) request.header("Authorization", "Bearer " + token);
+        if (body != null) request.contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
+        query.forEach(request::param);
+        var response = mvc.perform(request).andReturn().getResponse();
+        assertThat(response.getStatus()).as(method + " /api/admin/users" + path + ": "
                 + response.getContentAsString()).isEqualTo(expectedStatus);
         return json.readTree(response.getContentAsString());
     }

@@ -5,6 +5,7 @@ plugins {
 dependencies {
     implementation(project(":pettown-boot"))
     implementation(project(":module-miniapp"))
+    implementation(project(":module-business"))
     implementation(project(":common-web"))
     implementation(project(":common-log"))
     implementation(project(":common-mybatis"))
