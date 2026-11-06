@@ -81,12 +81,37 @@ public class AdminRoleServiceImpl implements AdminRoleService {
 
     @Override
     @Transactional
+    public AdminRole createV1Role(Long actorId, String code, String name, String description) {
+        policy.authorizeWrite(actorId, AdminPermissionCodes.ROLE_CREATE);
+        if (code == null || !code.matches("[a-z][a-z0-9_]{2,49}")) {
+            throw failure("角色编码须为 3 到 50 位小写字母、数字或下划线，以字母开头");
+        }
+        validateName(name);
+        validateDescription(description);
+        return insertRole(code, name.trim(), description);
+    }
+
+    @Override
+    @Transactional
     public void updateRole(Long actorId, Long id, String name, boolean enabled) {
         AdminRole role = requireManageable(actorId, AdminPermissionCodes.ROLE_UPDATE, id);
         validateName(name);
         role.setName(name.trim());
         role.setEnabled(enabled);
         roles.updateById(role);
+    }
+
+    @Override
+    @Transactional
+    public void updateV1Role(Long actorId, Long id, String name, String description, boolean enabled) {
+        requireManageable(actorId, AdminPermissionCodes.ROLE_UPDATE, id);
+        validateName(name);
+        validateDescription(description);
+        roles.update(new AdminRole(), new LambdaUpdateWrapper<AdminRole>()
+                .eq(AdminRole::getId, id)
+                .set(AdminRole::getName, name.trim())
+                .set(AdminRole::getDescription, description)
+                .set(AdminRole::getEnabled, enabled));
     }
 
     @Override
@@ -109,6 +134,17 @@ public class AdminRoleServiceImpl implements AdminRoleService {
     @Transactional
     public void deleteRole(Long actorId, Long id) {
         deleteRoleInternal(actorId, AdminPermissionCodes.ROLE_DELETE, id);
+    }
+
+    @Override
+    @Transactional
+    public void deleteV1Role(Long actorId, Long id) {
+        requireManageable(actorId, AdminPermissionCodes.ROLE_DELETE, id);
+        long references = accounts.selectCount(AdminAccount::getRoleId, id);
+        if (references > 0) {
+            throw failure("角色已被 " + references + " 个账号引用，不能删除");
+        }
+        clearRole(id);
     }
 
     @Override

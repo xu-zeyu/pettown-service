@@ -185,8 +185,18 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    public AdminRole createV1Role(Long actorId, String code, String name, String description) {
+        return roles.createV1Role(actorId, code, name, description);
+    }
+
+    @Override
     public void updateRole(Long actorId, Long id, String name, boolean enabled) {
         roles.updateRole(actorId, id, name, enabled);
+    }
+
+    @Override
+    public void updateV1Role(Long actorId, Long id, String name, String description, boolean enabled) {
+        roles.updateV1Role(actorId, id, name, description, enabled);
     }
 
     @Override
@@ -197,6 +207,11 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public void deleteRole(Long actorId, Long id) {
         roles.deleteRole(actorId, id);
+    }
+
+    @Override
+    public void deleteV1Role(Long actorId, Long id) {
+        roles.deleteV1Role(actorId, id);
     }
 
     @Override

@@ -20,14 +20,23 @@ public interface AdminRoleService {
     /** 参考角色接口创建角色：以 name 创建，名称不可与未删除角色重复。 */
     AdminRole createNamedRole(Long actorId, String name, String description);
 
+    /** v1 角色创建：调用方提供不可修改的唯一编码。 */
+    AdminRole createV1Role(Long actorId, String code, String name, String description);
+
     /** 旧角色接口更新：修改名称和启用状态；禁用后角色权限立即失效。 */
     void updateRole(Long actorId, Long id, String name, boolean enabled);
+
+    /** v1 角色编辑：名称、说明及启用状态全量更新；编码不变。 */
+    void updateV1Role(Long actorId, Long id, String name, String description, boolean enabled);
 
     /** 参考角色接口更新：只更新非 null 的 rname、description。 */
     void updateNamedRole(Long actorId, Long id, String rname, String description);
 
     /** 旧角色接口删除：逻辑删除并清理授权与账号绑定。 */
     void deleteRole(Long actorId, Long id);
+
+    /** v1 角色删除：存在未软删账号引用时拒绝并提示引用数量。 */
+    void deleteV1Role(Long actorId, Long id);
 
     /** 参考角色接口删除：语义与 {@link #deleteRole} 一致。 */
     void deleteNamedRole(Long actorId, Long id);

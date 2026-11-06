@@ -825,6 +825,95 @@ class AdminAlignmentTests {
     }
 
     @Test
+    void v1RolesSupportCrudPaginationAndImmutableUniqueCodes() throws Exception {
+        JsonNode created = v1RoleCall("POST", "", rootToken,
+                Map.of("code", "support_v1", "name", "客服", "description", "初始说明"), Map.of(), 200)
+                .path("data");
+        long id = created.path("id").asLong();
+        assertThat(created.path("code").asText()).isEqualTo("support_v1");
+        assertThat(created.path("description").asText()).isEqualTo("初始说明");
+        assertThat(created.path("enabled").asBoolean()).isTrue();
+        assertThat(created.has("deleted")).isFalse();
+
+        JsonNode duplicate = v1RoleCall("POST", "", rootToken,
+                Map.of("code", "support_v1", "name", "重复编码"), Map.of(), 400);
+        assertThat(duplicate.path("msg").asText()).contains("角色编码已存在");
+        JsonNode page = v1RoleCall("GET", "", rootToken, null,
+                Map.of("keyword", "support", "enabled", "true", "page", "1", "size", "1"), 200).path("data");
+        assertThat(page.path("total").asLong()).isEqualTo(1);
+        assertThat(page.path("list").get(0).path("id").asLong()).isEqualTo(id);
+        assertThat(v1RoleCall("GET", "/" + id, rootToken, null, Map.of(), 200)
+                .path("data").path("description").asText()).isEqualTo("初始说明");
+
+        v1RoleCall("PUT", "/" + id, rootToken, Map.of("name", "新客服", "enabled", false), Map.of(), 200);
+        JsonNode updated = v1RoleCall("GET", "/" + id, rootToken, null, Map.of(), 200).path("data");
+        assertThat(updated.path("name").asText()).isEqualTo("新客服");
+        assertThat(updated.path("description").isNull()).isTrue();
+        assertThat(updated.path("enabled").asBoolean()).isFalse();
+        assertThat(updated.path("code").asText()).isEqualTo("support_v1");
+        assertThat(v1RoleCall("GET", "", rootToken, null, Map.of("enabled", "false", "keyword", "新客服"), 200)
+                .path("data").path("total").asLong()).isEqualTo(1);
+
+        v1RoleCall("DELETE", "/" + id, rootToken, null, Map.of(), 200);
+        assertThat(jdbc.queryForObject("SELECT deleted FROM admin_role WHERE id=?", Integer.class, id)).isEqualTo(1);
+        v1RoleCall("GET", "/" + id, rootToken, null, Map.of(), 404);
+        assertThat(v1RoleCall("GET", "", rootToken, null, Map.of("keyword", "support_v1"), 200)
+                .path("data").path("total").asLong()).isZero();
+        v1RoleCall("POST", "", rootToken, Map.of("code", "support_v1", "name", "已软删编码"), Map.of(), 400);
+        call("GET", "/system/roles", rootToken, null, 200);
+    }
+
+    @Test
+    void v1RolesBlockReferencedDeletesAndEnforceIndividualPermissions() throws Exception {
+        long id = v1RoleCall("POST", "", rootToken,
+                Map.of("code", "referenced_v1", "name", "被引用角色"), Map.of(), 200)
+                .path("data").path("id").asLong();
+        var active = service.createAdmin(1L, "fixture_role_active", PASSWORD, "13800000071", null, id);
+        var archived = service.createAdmin(1L, "fixture_role_archived", PASSWORD, "13800000072", null, id);
+        service.deleteAccount(1L, archived.getId());
+        JsonNode blocked = v1RoleCall("DELETE", "/" + id, rootToken, null, Map.of(), 400);
+        assertThat(blocked.path("msg").asText()).contains("1", "账号引用");
+        assertThat(service.getAccount(active.getId()).getRoleId()).isEqualTo(id);
+        assertThat(service.getRole(id).getDeleted()).isZero();
+        service.deleteAccount(1L, active.getId());
+        v1RoleCall("DELETE", "/" + id, rootToken, null, Map.of(), 200);
+
+        var readerRole = service.createNamedRole(1L, "只读角色操作员", null);
+        service.replaceRolePermissions(1L, readerRole.getId(), List.of("system:role:read"));
+        service.createAdmin(1L, "fixture_role_reader", PASSWORD, "13800000073", null, readerRole.getId());
+        String reader = passwordLogin("fixture_role_reader");
+        v1RoleCall("GET", "", reader, null, Map.of(), 200);
+        v1RoleCall("POST", "", reader, Map.of("code", "denied_v1", "name", "无权创建"), Map.of(), 403);
+        v1RoleCall("PUT", "/" + readerRole.getId(), reader,
+                Map.of("name", "无权修改", "enabled", false), Map.of(), 403);
+        v1RoleCall("DELETE", "/" + readerRole.getId(), reader, null, Map.of(), 403);
+        v1RoleCall("GET", "", null, null, Map.of(), 401);
+        v1RoleCall("GET", "", PetTownToken.USER.createLoginSession("fixture-role-user"), null, Map.of(), 401);
+        v1RoleCall("POST", "", rootToken, Map.of("code", "Bad-Code", "name", "坏编码"), Map.of(), 400);
+        v1RoleCall("PUT", "/999999", rootToken, Map.of("name", "不存在", "enabled", true), Map.of(), 404);
+    }
+
+    @Test
+    void v1RolesRespectManageableBoundaryAndDisabledRolePermissions() throws Exception {
+        var managerRole = service.createNamedRole(1L, "角色管理操作员", null);
+        service.replaceRolePermissions(1L, managerRole.getId(),
+                List.of("system:role:read", "system:role:update", "system:role:delete"));
+        service.createAdmin(1L, "fixture_role_manager", PASSWORD, "13800000074", null, managerRole.getId());
+        String manager = passwordLogin("fixture_role_manager");
+        var elevated = service.createNamedRole(1L, "高权限目标角色", null);
+        service.replaceRolePermissions(1L, elevated.getId(), List.of("system:account:delete"));
+
+        v1RoleCall("PUT", "/" + managerRole.getId(), manager,
+                Map.of("name", "自改角色", "enabled", false), Map.of(), 400);
+        v1RoleCall("DELETE", "/" + elevated.getId(), manager, null, Map.of(), 400);
+        assertThat(service.getRole(elevated.getId()).getDeleted()).isZero();
+        v1RoleCall("GET", "", manager, null, Map.of(), 200);
+        v1RoleCall("PUT", "/" + managerRole.getId(), rootToken,
+                Map.of("name", "角色管理操作员", "enabled", false), Map.of(), 200);
+        v1RoleCall("GET", "", manager, null, Map.of(), 403);
+    }
+
+    @Test
     void deletingAnAccountPreservesRoleAndPermissionsAndRevokesAllSessions() throws Exception {
         var role = service.createNamedRole(1L, "可共享角色", null);
         service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
@@ -991,6 +1080,19 @@ class AdminAlignmentTests {
         var response = mvc.perform(request).andReturn().getResponse();
         assertThat(response.getStatus()).as("POST change-password: " + response.getContentAsString())
                 .isEqualTo(expectedStatus);
+        return json.readTree(response.getContentAsString());
+    }
+
+    private JsonNode v1RoleCall(String method, String path, String token, Object body,
+            Map<String, String> query, int expectedStatus) throws Exception {
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.request(
+                org.springframework.http.HttpMethod.valueOf(method), "/api/admin/system/roles" + path);
+        if (token != null) request.header("Authorization", "Bearer " + token);
+        if (body != null) request.contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
+        query.forEach(request::param);
+        var response = mvc.perform(request).andReturn().getResponse();
+        assertThat(response.getStatus()).as(method + " /api/admin/system/roles" + path + ": "
+                + response.getContentAsString()).isEqualTo(expectedStatus);
         return json.readTree(response.getContentAsString());
     }
 }

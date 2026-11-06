@@ -40,7 +40,8 @@ class AdminOpenApiTests {
             assertThat(entry.getKey().startsWith("/mng/")
                     || Set.of("/api/admin/auth/me", "/api/admin/auth/menus", "/api/admin/auth/change-password",
                             "/api/admin/system/accounts", "/api/admin/system/accounts/{id}",
-                            "/api/admin/system/accounts/{id}/status", "/api/admin/system/accounts/{id}/reset-password")
+                            "/api/admin/system/accounts/{id}/status", "/api/admin/system/accounts/{id}/reset-password",
+                            "/api/admin/system/roles", "/api/admin/system/roles/{id}")
                             .contains(entry.getKey())).isTrue();
             for (JsonNode operation : entry.getValue()) {
                 assertThat(operation.path("summary").asText()).isNotBlank();
@@ -48,7 +49,7 @@ class AdminOpenApiTests {
                 operations++;
             }
         }
-        assertThat(operations).isEqualTo(48);
+        assertThat(operations).isEqualTo(53);
         assertThat(paths.path("/mng/create").path("post").path("description").asText()).contains("SHA-256");
         assertThat(paths.path("/mng/permission/batchSync").path("post").path("description").asText()).contains("SUB_ADMIN", "事务");
         assertThat(paths.path("/mng/auth/login").path("post").path("security").size()).isZero();
@@ -87,6 +88,21 @@ class AdminOpenApiTests {
                 .path("properties").path("password").path("writeOnly").asBoolean()).isTrue();
         assertThat(document.path("components").path("schemas").path("V1ChangePasswordRequest")
                 .path("properties").path("newPassword").path("writeOnly").asBoolean()).isTrue();
+        JsonNode rolePage = paths.path("/api/admin/system/roles");
+        JsonNode roleItem = paths.path("/api/admin/system/roles/{id}");
+        assertThat(rolePage.size()).isEqualTo(2);
+        assertThat(roleItem.size()).isEqualTo(3);
+        for (String method : Set.of("get", "post")) {
+            assertThat(rolePage.path(method).path("security").get(0).has("bearerAuth")).isTrue();
+        }
+        for (String method : Set.of("get", "put", "delete")) {
+            assertThat(roleItem.path(method).path("security").get(0).has("bearerAuth")).isTrue();
+        }
+        assertThat(rolePage.path("get").path("description").asText()).contains("system:role:read");
+        assertThat(rolePage.path("post").path("description").asText()).contains("system:role:create");
+        assertThat(roleItem.path("get").path("description").asText()).contains("system:role:read");
+        assertThat(roleItem.path("put").path("description").asText()).contains("system:role:update");
+        assertThat(roleItem.path("delete").path("description").asText()).contains("system:role:delete");
     }
 
     @Test
