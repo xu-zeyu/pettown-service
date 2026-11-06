@@ -611,6 +611,76 @@ class AdminAlignmentTests {
     }
 
     @Test
+    void v1AccountCreationAssignsRoleAndRequiresFirstPasswordChange() throws Exception {
+        var role = service.createNamedRole(1L, "新建账号只读角色", null);
+        service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
+        JsonNode created = createV1Account(rootToken, Map.of(
+                "username", "NewAdmin85", "displayName", "新管理员", "phone", "13800000041",
+                "password", PASSWORD, "roleId", role.getId()), 200).path("data");
+        assertThat(created.path("username").asText()).isEqualTo("NewAdmin85");
+        assertThat(created.path("displayName").asText()).isEqualTo("新管理员");
+        assertThat(created.path("roleId").asLong()).isEqualTo(role.getId());
+        assertThat(created.path("passwordChangeRequired").asBoolean()).isTrue();
+        assertThat(created.has("passwordHash")).isFalse();
+        assertThat(created.has("sessionVersion")).isFalse();
+
+        String firstToken = passwordLogin("NewAdmin85");
+        assertThat(currentAuth("/me", firstToken, 200).path("data").path("account")
+                .path("passwordChangeRequired").asBoolean()).isTrue();
+        currentAuth("/menus", firstToken, 403);
+        currentAccounts(firstToken, 403, Map.of());
+        call("PUT", "/auth/password", firstToken,
+                Map.of("oldPassword", PASSWORD, "newPassword", "Fixture-New-456!"), 200);
+        currentAuth("/me", firstToken, 401);
+
+        service.generateLoginCode("NewAdmin85");
+        String key = "pettown:verification-code:admin_login:13800000041";
+        String freshToken = call("POST", "/auth/login", null,
+                Map.of("username", "NewAdmin85", "password", "Fixture-New-456!", "smsCode", codes.get(key)), 200)
+                .path("data").path("token").asText();
+        assertThat(currentAuth("/me", freshToken, 200).path("data").path("account")
+                .path("passwordChangeRequired").asBoolean()).isFalse();
+        currentAccounts(freshToken, 200, Map.of());
+    }
+
+    @Test
+    void v1AccountCreationRejectsDuplicatesInvalidInputsAndPrivilegeEscalation() throws Exception {
+        Map<String, Object> request = Map.of("username", "DupAdmin85", "displayName", "重复账号",
+                "phone", "13800000042", "password", PASSWORD);
+        createV1Account(rootToken, request, 200);
+        JsonNode duplicate = createV1Account(rootToken, request, 409);
+        assertThat(duplicate.path("code").asText()).isEqualTo("4091");
+        assertThat(duplicate.path("msg").asText()).isEqualTo("管理员账号已存在");
+        createV1Account(rootToken, Map.of("username", "abc", "displayName", "非法账号", "password", PASSWORD), 400);
+        createV1Account(rootToken, Map.of("username", "invalid_name", "displayName", "非法账号", "password", PASSWORD), 400);
+        createV1Account(rootToken, Map.of("username", "WeakAdmin85", "displayName", "弱密码", "password", "Onlyletters123"), 400);
+        createV1Account(rootToken, Map.of("username", "PhoneAdmin85", "displayName", "坏手机号",
+                "password", PASSWORD, "phone", "123"), 400);
+        createV1Account(rootToken, Map.of("username", "RoleAdmin85", "displayName", "坏角色",
+                "password", PASSWORD, "roleId", 0), 400);
+        createV1Account(rootToken, Map.of("username", "RoleAdmin85", "displayName", "不存在角色",
+                "password", PASSWORD, "roleId", 999999), 404);
+        createV1Account(null, request, 401);
+        createV1Account(PetTownToken.USER.createLoginSession("fixture-create-user"), request, 401);
+
+        var writerRole = service.createNamedRole(1L, "只能创建账号", null);
+        var superiorRole = service.createNamedRole(1L, "不能授予的角色", null);
+        service.replaceRolePermissions(1L, writerRole.getId(), List.of("system:account:create"));
+        service.replaceRolePermissions(1L, superiorRole.getId(), List.of("system:role:read"));
+        service.createAdmin(1L, "fixture_create_writer", PASSWORD, "13800000043", null, writerRole.getId());
+        service.createAdmin(1L, "fixture_create_denied", PASSWORD, "13800000044", null, superiorRole.getId());
+        String writerToken = passwordLogin("fixture_create_writer");
+        String deniedToken = passwordLogin("fixture_create_denied");
+        createV1Account(deniedToken, Map.of("username", "DeniedAdmin85", "displayName", "无权创建",
+                "password", PASSWORD), 403);
+        createV1Account(writerToken, Map.of("username", "EscalateAdmin85", "displayName", "越权角色",
+                "password", PASSWORD, "roleId", superiorRole.getId()), 400);
+        assertThat(accounts.selectOne(AdminAccount::getUsername, "EscalateAdmin85")).isNull();
+        call("POST", "/system/accounts", rootToken,
+                Map.of("username", "fixture_old_create", "displayName", "旧接口", "password", PASSWORD), 200);
+    }
+
+    @Test
     void deletingAnAccountPreservesRoleAndPermissionsAndRevokesAllSessions() throws Exception {
         var role = service.createNamedRole(1L, "可共享角色", null);
         service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
@@ -727,6 +797,16 @@ class AdminAlignmentTests {
         query.forEach(request::param);
         var response = mvc.perform(request).andReturn().getResponse();
         assertThat(response.getStatus()).as("GET /api/admin/system/accounts: " + response.getContentAsString())
+                .isEqualTo(expectedStatus);
+        return json.readTree(response.getContentAsString());
+    }
+
+    private JsonNode createV1Account(String token, Object body, int expectedStatus) throws Exception {
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.post("/api/admin/system/accounts")
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
+        if (token != null) request.header("Authorization", "Bearer " + token);
+        var response = mvc.perform(request).andReturn().getResponse();
+        assertThat(response.getStatus()).as("POST /api/admin/system/accounts: " + response.getContentAsString())
                 .isEqualTo(expectedStatus);
         return json.readTree(response.getContentAsString());
     }

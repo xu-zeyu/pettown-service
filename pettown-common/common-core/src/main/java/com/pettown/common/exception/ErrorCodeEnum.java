@@ -9,6 +9,7 @@ public enum ErrorCodeEnum implements CommonErrorCode {
     LOGIN_PASSWORD_INVALID("4003", "手机号或密码错误"),
     LOGIN_LOCKED("423", "账号暂时锁定"),
     PET_LIMIT_REACHED("409", "宠物数量已达上限"),
+    ADMIN_USERNAME_EXISTS("4091", "管理员账号已存在"),
     NOT_FOUND("404", "资源不存在");
 
     private final String code;
