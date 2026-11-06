@@ -38,14 +38,15 @@ class AdminOpenApiTests {
         int operations = 0;
         for (var entry : paths.properties()) {
             assertThat(entry.getKey().startsWith("/mng/")
-                    || Set.of("/api/admin/auth/me", "/api/admin/auth/menus").contains(entry.getKey())).isTrue();
+                    || Set.of("/api/admin/auth/me", "/api/admin/auth/menus", "/api/admin/system/accounts")
+                            .contains(entry.getKey())).isTrue();
             for (JsonNode operation : entry.getValue()) {
                 assertThat(operation.path("summary").asText()).isNotBlank();
                 assertThat(operation.path("tags").size()).isPositive();
                 operations++;
             }
         }
-        assertThat(operations).isEqualTo(42);
+        assertThat(operations).isEqualTo(43);
         assertThat(paths.path("/mng/create").path("post").path("description").asText()).contains("SHA-256");
         assertThat(paths.path("/mng/permission/batchSync").path("post").path("description").asText()).contains("SUB_ADMIN", "事务");
         assertThat(paths.path("/mng/auth/login").path("post").path("security").size()).isZero();
@@ -57,6 +58,13 @@ class AdminOpenApiTests {
             assertThat(paths.path(path).path("get").path("security").get(0).has("bearerAuth")).isTrue();
             assertThat(paths.path(path).size()).isEqualTo(1);
         }
+        JsonNode accountPage = paths.path("/api/admin/system/accounts");
+        assertThat(accountPage.size()).isEqualTo(1);
+        assertThat(accountPage.path("get").path("security").get(0).has("bearerAuth")).isTrue();
+        assertThat(accountPage.path("get").path("description").asText()).contains("system:account:read");
+        assertThat(accountPage.path("get").path("parameters").findValuesAsText("name"))
+                .contains("page", "size", "username", "displayName", "enabled", "roleId")
+                .doesNotContain("sizeValid");
     }
 
     @Test

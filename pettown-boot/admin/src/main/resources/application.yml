@@ -54,4 +54,5 @@ springdoc:
     - /mng/**
     - /api/admin/auth/me
     - /api/admin/auth/menus
+    - /api/admin/system/accounts
   default-flat-param-object: true
