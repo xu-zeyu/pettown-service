@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import cn.dev33.satoken.dao.SaTokenDao;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -36,14 +37,15 @@ class AdminOpenApiTests {
         JsonNode paths = document.path("paths");
         int operations = 0;
         for (var entry : paths.properties()) {
-            assertThat(entry.getKey()).startsWith("/mng/");
+            assertThat(entry.getKey().startsWith("/mng/")
+                    || Set.of("/api/admin/auth/me", "/api/admin/auth/menus").contains(entry.getKey())).isTrue();
             for (JsonNode operation : entry.getValue()) {
                 assertThat(operation.path("summary").asText()).isNotBlank();
                 assertThat(operation.path("tags").size()).isPositive();
                 operations++;
             }
         }
-        assertThat(operations).isEqualTo(40);
+        assertThat(operations).isEqualTo(42);
         assertThat(paths.path("/mng/create").path("post").path("description").asText()).contains("SHA-256");
         assertThat(paths.path("/mng/permission/batchSync").path("post").path("description").asText()).contains("SUB_ADMIN", "事务");
         assertThat(paths.path("/mng/auth/login").path("post").path("security").size()).isZero();
@@ -51,6 +53,10 @@ class AdminOpenApiTests {
         assertThat(verification.path("security").size()).isZero();
         assertThat(verification.path("description").asText()).contains("只接受 ADMIN_LOGIN");
         assertThat(paths.path("/mng/system/accounts").path("get").path("security").get(0).has("bearerAuth")).isTrue();
+        for (String path : Set.of("/api/admin/auth/me", "/api/admin/auth/menus")) {
+            assertThat(paths.path(path).path("get").path("security").get(0).has("bearerAuth")).isTrue();
+            assertThat(paths.path(path).size()).isEqualTo(1);
+        }
     }
 
     @Test

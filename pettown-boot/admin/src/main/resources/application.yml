@@ -50,5 +50,8 @@ server:
 
 springdoc:
   packages-to-scan: com.pettown.admin
-  paths-to-match: /mng/**
+  paths-to-match:
+    - /mng/**
+    - /api/admin/auth/me
+    - /api/admin/auth/menus
   default-flat-param-object: true

@@ -470,6 +470,71 @@ class AdminAlignmentTests {
     }
 
     @Test
+    void currentAdminApiReturnsLiveRolePermissionsAndMenus() throws Exception {
+        JsonNode root = currentAuth("/me", rootToken, 200).path("data");
+        assertThat(root.path("account").path("username").asText()).isEqualTo("fixture_root");
+        assertThat(strings(root.path("permissions"))).contains("system:account:read", "system:role:read");
+        assertThat(currentAuth("/menus", rootToken, 200).path("data").get(0).path("children")
+                .findValuesAsText("code")).contains("accounts", "roles", "permissions");
+
+        var accountRole = service.createNamedRole(1L, "新接口账号角色", null);
+        var roleRole = service.createNamedRole(1L, "新接口角色角色", null);
+        service.replaceRolePermissions(1L, accountRole.getId(), List.of("system:account:read"));
+        service.replaceRolePermissions(1L, roleRole.getId(), List.of("system:role:read"));
+        service.createAdmin(1L, "fixture_current_account", PASSWORD, "13800000021", null, accountRole.getId());
+        service.createAdmin(1L, "fixture_current_role", PASSWORD, "13800000022", null, roleRole.getId());
+        String accountToken = passwordLogin("fixture_current_account");
+        String roleToken = passwordLogin("fixture_current_role");
+
+        JsonNode account = currentAuth("/me", accountToken, 200).path("data");
+        assertThat(account.path("roles").size()).isEqualTo(1);
+        assertThat(strings(account.path("permissions"))).containsExactly("system:account:read");
+        assertThat(account.path("account").has("passwordHash")).isFalse();
+        assertThat(account.path("account").has("sessionVersion")).isFalse();
+        assertThat(currentAuth("/menus", accountToken, 200).path("data").get(0).path("children")
+                .findValuesAsText("code")).containsExactly("accounts");
+        assertThat(strings(currentAuth("/me", roleToken, 200).path("data").path("permissions")))
+                .containsExactly("system:role:read");
+        assertThat(currentAuth("/menus", roleToken, 200).path("data").get(0).path("children")
+                .findValuesAsText("code")).containsExactly("roles");
+
+        service.replaceRolePermissions(1L, accountRole.getId(), List.of());
+        assertThat(currentAuth("/me", accountToken, 200).path("data").path("permissions")).isEmpty();
+        assertThat(currentAuth("/menus", accountToken, 200).path("data")).isEmpty();
+        call("GET", "/auth/me", accountToken, null, 200);
+    }
+
+    @Test
+    void currentAdminApiRejectsInvalidSessionsAndRestrictsInitialPassword() throws Exception {
+        currentAuth("/me", null, 401);
+        currentAuth("/menus", null, 401);
+        String userToken = PetTownToken.USER.createLoginSession("fixture-current-user");
+        currentAuth("/me", userToken, 401);
+        currentAuth("/menus", userToken, 401);
+
+        var disabled = service.createAdmin(1L, "fixture_current_disabled", PASSWORD, "13800000023", null, null);
+        String disabledToken = passwordLogin("fixture_current_disabled");
+        service.setAccountEnabled(1L, disabled.getId(), false);
+        currentAuth("/me", disabledToken, 401);
+        currentAuth("/menus", disabledToken, 401);
+        service.setAccountEnabled(1L, disabled.getId(), true);
+        currentAuth("/me", disabledToken, 401);
+        currentAuth("/menus", disabledToken, 401);
+
+        service.createAccount(1L, "fixture_current_initial", "初始账号", INITIAL_PASSWORD, "13800000024");
+        service.generateLoginCode("fixture_current_initial");
+        String key = "pettown:verification-code:admin_login:13800000024";
+        String initialToken = call("POST", "/auth/login", null,
+                Map.of("username", "fixture_current_initial", "password", INITIAL_PASSWORD, "smsCode", codes.get(key)), 200)
+                .path("data").path("token").asText();
+        assertThat(currentAuth("/me", initialToken, 200).path("data").path("account")
+                .path("passwordChangeRequired").asBoolean()).isTrue();
+        currentAuth("/menus", initialToken, 403);
+        call("GET", "/auth/me", initialToken, null, 200);
+        call("GET", "/auth/menus", initialToken, null, 403);
+    }
+
+    @Test
     void deletingAnAccountPreservesRoleAndPermissionsAndRevokesAllSessions() throws Exception {
         var role = service.createNamedRole(1L, "可共享角色", null);
         service.replaceRolePermissions(1L, role.getId(), List.of("system:account:read"));
@@ -565,5 +630,18 @@ class AdminAlignmentTests {
         var response = mvc.perform(request).andReturn().getResponse();
         assertThat(response.getStatus()).as(method + " " + path + ": " + response.getContentAsString()).isEqualTo(expectedStatus);
         return json.readTree(response.getContentAsString());
+    }
+
+    private JsonNode currentAuth(String path, String token, int expectedStatus) throws Exception {
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get("/api/admin/auth" + path);
+        if (token != null) request.header("Authorization", "Bearer " + token);
+        var response = mvc.perform(request).andReturn().getResponse();
+        assertThat(response.getStatus()).as("GET /api/admin/auth" + path + ": " + response.getContentAsString())
+                .isEqualTo(expectedStatus);
+        return json.readTree(response.getContentAsString());
+    }
+
+    private List<String> strings(JsonNode node) {
+        return java.util.stream.StreamSupport.stream(node.spliterator(), false).map(JsonNode::asText).toList();
     }
 }
