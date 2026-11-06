@@ -12,5 +12,8 @@ spring:
     init:
       mode: always
 pettown:
+  file:
+    enabled: false
+    public-base-url: http://localhost:8082
   redis:
     enabled: false

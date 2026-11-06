@@ -53,6 +53,9 @@ springdoc:
   default-flat-param-object: true
 
 pettown:
+  file:
+    enabled: ${PETTOWN_FILE_ENABLED:false}
+    public-base-url: ${PETTOWN_FILE_PUBLIC_BASE_URL:}
   verification:
     # 仅填写会覆盖 X-Real-IP 的可信反向代理直连地址；留空时始终使用 TCP 来源地址。
     trusted-proxy-ips: ${PETTOWN_TRUSTED_PROXY_IPS:}

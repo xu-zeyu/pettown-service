@@ -78,6 +78,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             case "429" -> HttpStatus.TOO_MANY_REQUESTS;
             case "423" -> HttpStatus.LOCKED;
             case "409", "4091" -> HttpStatus.CONFLICT;
+            case "503" -> HttpStatus.SERVICE_UNAVAILABLE;
             default -> HttpStatus.BAD_REQUEST;
         };
         return buildErrorResponse(status, e);
