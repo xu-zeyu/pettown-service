@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS pet (
     weight_kg DECIMAL(5,2),
     sterilized BOOLEAN,
     avatar_url VARCHAR(2048),
+    deleted INT NOT NULL DEFAULT 0,
     created_time TIMESTAMP NOT NULL,
     updated_time TIMESTAMP NOT NULL,
     INDEX idx_pet_owner_id (owner_id)
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS pet_health_record (
     record_date DATE NOT NULL,
     notes VARCHAR(2000),
     next_reminder_date DATE,
+    deleted INT NOT NULL DEFAULT 0,
     created_time TIMESTAMP NOT NULL,
     updated_time TIMESTAMP NOT NULL,
     INDEX idx_pet_health_record_pet_date (pet_id, record_date, id)

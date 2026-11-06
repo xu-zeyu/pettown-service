@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS pet_health_record (
     record_date DATE NOT NULL,
     notes VARCHAR(2000) NULL,
     next_reminder_date DATE NULL,
+    deleted INT NOT NULL DEFAULT 0,
     created_time DATETIME NOT NULL,
     updated_time DATETIME NOT NULL,
     INDEX idx_pet_health_record_pet_date (pet_id, record_date, id)

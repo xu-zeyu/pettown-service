@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -62,6 +63,13 @@ public class MiniappPetController {
             @Valid @RequestBody CreatePetProfileRequest request) {
         return Result.success(PetProfileResponse.from(
                 service.update(PetTownToken.USER.getLoginIdAsString(), id, request)));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "删除我的宠物", description = "仅归属用户可删除；宠物及关联健康记录逻辑删除，重复删除返回不存在")
+    public Result<Void> delete(@PathVariable Long id) {
+        service.delete(PetTownToken.USER.getLoginIdAsString(), id);
+        return Result.success();
     }
 
     private static int validNumberOrDefault(String value, int min, int max, int fallback) {

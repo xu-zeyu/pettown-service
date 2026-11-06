@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS pet (
     weight_kg DECIMAL(5,2) NULL,
     sterilized BOOLEAN NULL,
     avatar_url VARCHAR(2048) NULL,
+    deleted INT NOT NULL DEFAULT 0,
     created_time DATETIME NOT NULL,
     updated_time DATETIME NOT NULL,
     INDEX idx_pet_owner_id (owner_id)

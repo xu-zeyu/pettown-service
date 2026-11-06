@@ -2,6 +2,7 @@ package com.pettown.business.pet.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.pettown.common.mybatis.model.BaseEntity;
 import java.time.LocalDate;
@@ -20,4 +21,6 @@ public class PetHealthRecord extends BaseEntity {
     private LocalDate recordDate;
     private String notes;
     private LocalDate nextReminderDate;
+    @TableLogic
+    private Integer deleted;
 }

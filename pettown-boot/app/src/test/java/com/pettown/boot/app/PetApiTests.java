@@ -13,12 +13,38 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 @ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class PetApiTests {
     @Autowired
     private TestRestTemplate restTemplate;
+    @Autowired
+    private JdbcTemplate jdbc;
+
+    @Test
+    void hidesSoftDeletedPetsFromSharedAppReads() {
+        String owner = "fixture-app-deleted-owner";
+        jdbc.update("INSERT INTO pet(name,species,owner_id,deleted,created_time,updated_time) "
+                + "VALUES (?,?,?,1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)", "已删宠物", "CAT", owner);
+        Long id = jdbc.queryForObject("SELECT id FROM pet WHERE owner_id = ?", Long.class, owner);
+        String token = PetTownToken.USER.createLoginSession(owner);
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(token);
+            ResponseEntity<String> detail = restTemplate.exchange("/api/pets/" + id, HttpMethod.GET,
+                    new HttpEntity<>(headers), String.class);
+            assertThat(detail.getStatusCode().value()).isEqualTo(404);
+            ResponseEntity<String> list = restTemplate.exchange("/api/pets", HttpMethod.GET,
+                    new HttpEntity<>(headers), String.class);
+            assertThat(list.getStatusCode().value()).isEqualTo(200);
+            assertThat(list.getBody()).doesNotContain("已删宠物");
+        } finally {
+            PetTownToken.USER.logoutByTokenValue(token);
+            jdbc.update("DELETE FROM pet WHERE id = ?", id);
+        }
+    }
 
     @Test
     void createAndReadPetThroughHttp() {
