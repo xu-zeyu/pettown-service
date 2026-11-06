@@ -1,6 +1,7 @@
 package com.pettown.common.file.service;
 
 import com.aliyun.oss.OSS;
+import com.aliyun.oss.OSSException;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.ClientBuilderConfiguration;
 import com.aliyun.oss.common.auth.DefaultCredentialProvider;
@@ -59,6 +60,47 @@ public class OssFileService implements FileService {
             throw new IllegalStateException("读取 OSS 文件失败", exception);
         } finally {
             client.shutdown();
+        }
+    }
+
+    @Override
+    public void uploadObject(String objectKey, byte[] content) {
+        checkObjectKey(objectKey);
+        if (content == null || content.length == 0) {
+            throw new IllegalArgumentException("文件内容不能为空");
+        }
+        OSS client = client();
+        try {
+            client.putObject(properties.bucketName(), objectKey, new ByteArrayInputStream(content));
+        } finally {
+            client.shutdown();
+        }
+    }
+
+    @Override
+    public byte[] downloadObject(String objectKey) {
+        checkObjectKey(objectKey);
+        OSS client = client();
+        try {
+            OSSObject object = client.getObject(properties.bucketName(), objectKey);
+            try (InputStream stream = object.getObjectContent()) {
+                return stream.readAllBytes();
+            }
+        } catch (OSSException exception) {
+            if ("NoSuchKey".equals(exception.getErrorCode())) {
+                return null;
+            }
+            throw exception;
+        } catch (IOException exception) {
+            throw new IllegalStateException("读取 OSS 文件失败", exception);
+        } finally {
+            client.shutdown();
+        }
+    }
+
+    private static void checkObjectKey(String objectKey) {
+        if (objectKey == null || !objectKey.matches("miniapp/images/[0-9a-f-]{36}\\.(jpg|png|webp)")) {
+            throw new IllegalArgumentException("文件对象标识无效");
         }
     }
 

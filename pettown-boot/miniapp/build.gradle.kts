@@ -16,6 +16,7 @@ dependencies {
     runtimeOnly("com.mysql:mysql-connector-j")
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(project(":module-business"))
+    testImplementation(project(":common-file"))
     testImplementation("org.springframework.security:spring-security-crypto")
     testRuntimeOnly(libs.h2)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
