@@ -21,6 +21,12 @@ final class AdminValidations {
         }
     }
 
+    static void validateV1Password(String password) {
+        if (password == null || !password.matches("(?=.*[A-Za-z])(?=.*[0-9])[\\x21-\\x7E]{8,64}")) {
+            throw failure("密码须为 8 到 64 位非空格 ASCII，且包含字母和数字");
+        }
+    }
+
     static void validateName(String name) {
         if (name == null || name.isBlank() || name.trim().length() > 50) {
             throw failure("名称不能为空且不能超过 50 个字符");

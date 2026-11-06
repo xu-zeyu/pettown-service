@@ -115,8 +115,18 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    public void resetV1Password(Long actorId, Long id, String password) {
+        accounts.resetV1Password(actorId, id, password);
+    }
+
+    @Override
     public void changePassword(Long id, String oldPassword, String newPassword) {
         accounts.changePassword(id, oldPassword, newPassword);
+    }
+
+    @Override
+    public void changeV1Password(Long id, String oldPassword, String newPassword) {
+        accounts.changeV1Password(id, oldPassword, newPassword);
     }
 
     @Override
