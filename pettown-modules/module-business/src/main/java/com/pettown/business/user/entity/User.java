@@ -1,6 +1,7 @@
 package com.pettown.business.user.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.pettown.common.commonEnum.UserSourceEnum;
@@ -20,6 +21,9 @@ public class User {
     private String passwordHash;
     private UserSourceEnum source;
     private UserStatus status = UserStatus.ACTIVE;
+    private String nickname;
+    @TableField("avatar")
+    private String avatarUrl;
     private LocalDateTime createdAt;
 
     public User(String id, String phone, String passwordHash, UserSourceEnum source) {

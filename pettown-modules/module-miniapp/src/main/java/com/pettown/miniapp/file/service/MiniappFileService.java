@@ -63,6 +63,14 @@ public class MiniappFileService {
         return new ImageContent(content, contentTypeOf(extension));
     }
 
+    /** 校验地址必须为本系统上传接口返回的图片 URL；不回查存储存在性。 */
+    public void requireOwnImageUrl(String url) {
+        String prefix = validatedBaseUrl() + "/api/miniapp/files/";
+        if (url == null || !url.startsWith(prefix) || !FILE_ID.matcher(url.substring(prefix.length())).matches()) {
+            throw new BusinessException(ErrorCodeEnum.FAIL, "头像必须为本系统上传接口返回的地址");
+        }
+    }
+
     private String validateImage(String originalFilename, byte[] content) {
         if (content == null || content.length == 0) {
             throw new BusinessException(ErrorCodeEnum.FAIL, "文件内容不能为空");
