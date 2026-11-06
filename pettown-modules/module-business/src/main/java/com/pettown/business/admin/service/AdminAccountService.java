@@ -25,6 +25,10 @@ public interface AdminAccountService {
     /** 旧账号管理接口创建的账号须首次改密。 */
     AdminAccount createAccount(Long actorId, String username, String displayName, String password, String phone);
 
+    /** v1 管理端创建：可指定不越权的角色，初始密码须强校验，首次登录强制改密。 */
+    AdminAccount createV1Account(Long actorId, String username, String displayName, String password,
+            String phone, Long roleId);
+
     /** 参考接口创建的账号可直接使用，无需首次改密。 */
     AdminAccount createAdmin(Long actorId, String username, String password, String phone, String realName, Long roleId);
 

@@ -74,6 +74,12 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    public AdminAccount createV1Account(Long actorId, String username, String displayName, String password,
+            String phone, Long roleId) {
+        return accounts.createV1Account(actorId, username, displayName, password, phone, roleId);
+    }
+
+    @Override
     public AdminAccount createAdmin(Long actorId, String username, String password, String phone, String realName, Long roleId) {
         return accounts.createAdmin(actorId, username, password, phone, realName, roleId);
     }

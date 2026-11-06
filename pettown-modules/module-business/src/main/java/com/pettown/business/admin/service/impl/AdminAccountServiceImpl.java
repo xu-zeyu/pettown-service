@@ -12,6 +12,8 @@ import com.pettown.business.admin.constant.AdminPermissionCodes;
 import com.pettown.business.admin.entity.AdminAccount;
 import com.pettown.business.admin.mapper.AdminAccountMapper;
 import com.pettown.business.admin.service.AdminAccountService;
+import com.pettown.common.exception.BusinessException;
+import com.pettown.common.exception.ErrorCodeEnum;
 import com.pettown.common.mybatis.PageParam;
 import com.pettown.common.mybatis.PageResult;
 import com.pettown.common.utils.PasswordService;
@@ -102,6 +104,30 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         validatePassword(password);
         validatePhone(phone);
         return insertNewAccount(username, displayName.trim(), password, phone, null, true);
+    }
+
+    @Override
+    @Transactional
+    public AdminAccount createV1Account(Long actorId, String username, String displayName, String password,
+            String phone, Long roleId) {
+        policy.authorizeWrite(actorId, AdminPermissionCodes.ACCOUNT_CREATE);
+        if (username == null || !username.matches("[A-Za-z0-9]{4,50}")) {
+            throw failure("用户名须为 4 到 50 位字母或数字");
+        }
+        validateName(displayName);
+        if (password == null || !password.matches("[\\x21-\\x7E]{8,72}")
+                || !password.matches(".*[A-Za-z].*")
+                || !password.matches(".*[0-9].*")
+                || !password.matches(".*[^A-Za-z0-9].*")) {
+            throw failure("初始密码须为 8 到 72 位非空格 ASCII，且包含字母、数字、符号");
+        }
+        validatePhone(phone);
+        if (roleId != null) {
+            policy.requireRole(roleId);
+            policy.ensureSubset(actorId, policy.rolePermissionCodes(roleId));
+        }
+        return insertNewAccount(username, displayName.trim(), password, phone, roleId, true,
+                ErrorCodeEnum.ADMIN_USERNAME_EXISTS);
     }
 
     @Override
@@ -227,19 +253,25 @@ public class AdminAccountServiceImpl implements AdminAccountService {
      */
     private AdminAccount insertNewAccount(String username, String displayName, String password,
             String phone, Long roleId, boolean passwordChangeRequired) {
+        return insertNewAccount(username, displayName, password, phone, roleId, passwordChangeRequired,
+                ErrorCodeEnum.FAIL);
+    }
+
+    private AdminAccount insertNewAccount(String username, String displayName, String password,
+            String phone, Long roleId, boolean passwordChangeRequired, ErrorCodeEnum duplicateCode) {
         AdminAccount account = newAccount(username, displayName, password);
         account.setPhone(phone);
         account.setRoleId(roleId);
         account.setPasswordChangeRequired(passwordChangeRequired);
-        insertAccount(account);
+        insertAccount(account, duplicateCode);
         return account;
     }
 
-    private void insertAccount(AdminAccount account) {
+    private void insertAccount(AdminAccount account, ErrorCodeEnum duplicateCode) {
         try {
             accounts.insert(account);
         } catch (DuplicateKeyException exception) {
-            throw failure("管理员账号已存在");
+            throw new BusinessException(duplicateCode, "管理员账号已存在");
         }
     }
 
