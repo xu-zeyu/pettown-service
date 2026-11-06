@@ -55,4 +55,6 @@ springdoc:
     - /api/admin/auth/me
     - /api/admin/auth/menus
     - /api/admin/system/accounts
+    - /api/admin/system/accounts/{id}
+    - /api/admin/system/accounts/{id}/status
   default-flat-param-object: true

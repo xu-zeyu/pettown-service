@@ -67,7 +67,7 @@ public class AdminAccountController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "删除管理员", description = "需要 system:account:delete；删除账号并注销其全部会话，保留角色及角色权限；不能删除自身、超级管理员或权限超出自身范围的账号")
+    @Operation(summary = "软删除管理员", description = "需要 system:account:delete；软删除账号并注销其全部会话，保留角色及角色权限；不能删除自身、超级管理员或权限超出自身范围的账号")
     @SaCheckPermission(value = AdminPermissionCodes.ACCOUNT_DELETE, type = "admin")
     @Log("删除管理员")
     public Result<Void> delete(@PathVariable Long id) {

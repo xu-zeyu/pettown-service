@@ -2,6 +2,7 @@ package com.pettown.business.admin.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.pettown.common.mybatis.model.BaseEntity;
 import java.time.LocalDateTime;
@@ -27,4 +28,6 @@ public class AdminAccount extends BaseEntity {
     private Boolean superAdmin;
     private Boolean passwordChangeRequired;
     private Long sessionVersion;
+    @TableLogic
+    private Integer deleted;
 }

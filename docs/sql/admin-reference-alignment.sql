@@ -9,6 +9,7 @@ ALTER TABLE admin_account ADD COLUMN role_id BIGINT NULL;
 ALTER TABLE admin_account ADD COLUMN phone VARCHAR(11);
 ALTER TABLE admin_account ADD COLUMN avatar VARCHAR(500);
 ALTER TABLE admin_account ADD COLUMN last_login_time TIMESTAMP;
+ALTER TABLE admin_account ADD COLUMN deleted INT NOT NULL DEFAULT 0;
 ALTER TABLE admin_role ADD COLUMN description VARCHAR(500);
 ALTER TABLE admin_role ADD COLUMN deleted INT NOT NULL DEFAULT 0;
 CREATE INDEX idx_admin_account_role_id ON admin_account (role_id);

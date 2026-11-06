@@ -26,6 +26,7 @@ class AdminMigrationTests {
             new ResourceDatabasePopulator(new ClassPathResource("admin-migration.sql")).execute(database);
             assertThat(jdbc.queryForObject("SELECT password_hash FROM admin_account WHERE id=1", String.class)).isEqualTo("fixture-hash");
             assertThat(jdbc.queryForObject("SELECT deleted FROM admin_role WHERE id=1", Integer.class)).isZero();
+            assertThat(jdbc.queryForObject("SELECT deleted FROM admin_account WHERE id=1", Integer.class)).isZero();
             assertThat(jdbc.queryForList("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='PUBLIC'", String.class))
                     .containsExactlyInAnyOrder("ADMIN_ACCOUNT", "ADMIN_ROLE", "ADMIN_PERMISSION", "ADMIN_ROLE_PERMISSION");
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM admin_role_permission", Integer.class)).isEqualTo(2);
@@ -53,6 +54,8 @@ class AdminMigrationTests {
             new ResourceDatabasePopulator(new ClassPathResource("admin-deployment.sql")).execute(database);
             var jdbc = new JdbcTemplate(database);
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM admin_account", Integer.class)).isZero();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+                    + "WHERE TABLE_NAME='ADMIN_ACCOUNT' AND COLUMN_NAME='DELETED'", Integer.class)).isEqualTo(1);
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM admin_permission", Integer.class)).isEqualTo(14);
         } finally {
             database.shutdown();
@@ -76,6 +79,27 @@ class AdminMigrationTests {
             // 不含真实密码：占位哈希原样保留，使用前必须重置
             assertThat(jdbc.queryForObject("SELECT password_hash FROM admin_account", String.class))
                     .isEqualTo("REPLACE-ME-PLACEHOLDER-HASH");
+        } finally {
+            database.shutdown();
+        }
+    }
+
+    @Test
+    void softDeleteIncrementalSqlPreservesExistingAccountsAndDefaultsToVisible() {
+        var database = new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2)
+                .setName("admin-soft-delete;MODE=MySQL").addScript("schema-before-admin-alignment.sql").build();
+        try {
+            var jdbc = new JdbcTemplate(database);
+            jdbc.update("INSERT INTO admin_account (id, username, display_name, password_hash, created_time, updated_time) "
+                    + "VALUES (1, 'fixture_existing', '存量账号', 'fixture-hash', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
+            new ResourceDatabasePopulator(new ClassPathResource("admin-account-soft-delete.sql"))
+                    .execute(database);
+            assertThat(jdbc.queryForObject("SELECT deleted FROM admin_account WHERE id=1", Integer.class)).isZero();
+            assertThat(jdbc.queryForObject("SELECT password_hash FROM admin_account WHERE id=1", String.class))
+                    .isEqualTo("fixture-hash");
+            jdbc.update("UPDATE admin_account SET deleted=1 WHERE id=1");
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM admin_account WHERE id=1 AND deleted=1", Integer.class))
+                    .isEqualTo(1);
         } finally {
             database.shutdown();
         }

@@ -2,6 +2,7 @@ package com.pettown.admin.system.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.pettown.admin.system.dto.AdminAccountSearchRequest;
+import com.pettown.admin.system.dto.StatusRequest;
 import com.pettown.admin.system.dto.V1CreateAccountRequest;
 import com.pettown.admin.system.vo.AccountResponse;
 import com.pettown.business.admin.constant.AdminPermissionCodes;
@@ -15,13 +16,16 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-/** v1 管理端账号接口；独立路径仅暴露受保护的 GET 与 POST。 */
+/** v1 管理端账号接口；每个路由独立声明权限，不给旧控制器整体加别名。 */
 @RestController
 @RequestMapping("/api/admin/system/accounts")
 @Tag(name = "管理员管理")
@@ -51,5 +55,27 @@ public class AdminAccountPageController {
         return Result.success(AccountResponse.from(service.createV1Account(
                 PetTownToken.ADMIN.getLoginIdAsLong(), request.username(), request.displayName(),
                 request.password(), request.phone(), request.roleId())));
+    }
+
+    @PutMapping("/{id}/status")
+    @Operation(summary = "启用或停用管理员账号", description = "需要 system:account:status；不能操作自己或超级管理员；停用后目标账号全部旧会话失效")
+    @SaCheckPermission(value = AdminPermissionCodes.ACCOUNT_STATUS, type = "admin")
+    @Log("启停管理员账号")
+    public Result<Void> status(@PathVariable Long id, @Valid @RequestBody StatusRequest request) {
+        service.setAccountEnabled(PetTownToken.ADMIN.getLoginIdAsLong(), id, request.enabled());
+        if (!request.enabled()) {
+            PetTownToken.ADMIN.logout(id);
+        }
+        return Result.success();
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "软删除管理员账号", description = "需要 system:account:delete；不能删除自己或超级管理员；删除后目标账号不可登录，角色和权限保留")
+    @SaCheckPermission(value = AdminPermissionCodes.ACCOUNT_DELETE, type = "admin")
+    @Log("删除管理员账号")
+    public Result<Void> delete(@PathVariable Long id) {
+        service.deleteAccount(PetTownToken.ADMIN.getLoginIdAsLong(), id);
+        PetTownToken.ADMIN.logout(id);
+        return Result.success();
     }
 }
