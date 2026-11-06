@@ -15,4 +15,5 @@
 
 - “生成 <版本> 版本需求”等口语指令读取 `.ai/agents/研发Agent.md`、`.ai/skills/tapd-requirement-intake/SKILL.md` 与工作流 02/03，按版本完成需求池、评分评审、TAPD 入库回读和企业微信创建通知。
 - “开始 <版本> 代码编写”等口语指令读取 `.ai/agents/研发Agent.md`、`.ai/skills/tapd-version-delivery/SKILL.md` 与工作流 04/05/06。从 TAPD 整理清单，按 P0→P3 及依赖逐项独立分支执行；当前项开始通知、代码审查、自测、合并核对和完成通知结束后才能开始下一项。
+- “进行 <模块> 的全量测试”“测试 <模块> 接口”等口语指令读取 `.ai/workflows/07-模块自动化测试.md` 做路由；后端 HTTP 接口模块走 `.ai/skills/api-regression-testing/SKILL.md`，完成接口识别、Apifox 上传回读、可执行用例编写运行、报告落盘和企业微信通知闭环。Apifox 凭证配置于 `.ai/skills/api-regression-testing/.env`（参照同目录 `.env.example`），缺失时按 skill 内降级路径执行。
 - 以上口语指令的授权范围按 `.ai/core/人工审批规范.md` 执行；不推断具体 TAPD 版本或记录，不自动关闭 TAPD 事项。
