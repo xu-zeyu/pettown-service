@@ -71,4 +71,5 @@ springdoc:
     - /api/admin/verification/captcha
     - /api/admin/system/permissions
     - /api/admin/system/permissions/sync
+    - /api/admin/system/roles/{id}/permissions
   default-flat-param-object: true
