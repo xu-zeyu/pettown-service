@@ -2,6 +2,7 @@ package com.pettown.admin.system.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.pettown.admin.system.dto.AdminPageRequest;
+import com.pettown.admin.system.dto.RolePermissionsRequest;
 import com.pettown.admin.system.dto.V1CreateRoleRequest;
 import com.pettown.admin.system.dto.V1UpdateRoleRequest;
 import com.pettown.admin.system.vo.V1RoleResponse;
@@ -15,6 +16,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -51,6 +53,22 @@ public class AdminV1RoleController {
     @SaCheckPermission(value = AdminPermissionCodes.ROLE_READ, type = "admin")
     public Result<V1RoleResponse> get(@PathVariable Long id) {
         return Result.success(V1RoleResponse.from(service.getRole(id)));
+    }
+
+    @GetMapping("/{id}/permissions")
+    @Operation(summary = "查询角色权限码集合", description = "需要 system:role:assign-permission；返回该角色当前绑定的权限编码")
+    @SaCheckPermission(value = AdminPermissionCodes.ROLE_ASSIGN_PERMISSION, type = "admin")
+    public Result<List<String>> rolePermissions(@PathVariable Long id) {
+        return Result.success(service.rolePermissions(id));
+    }
+
+    @PutMapping("/{id}/permissions")
+    @Operation(summary = "同步角色权限码集合", description = "需要 system:role:assign-permission；整体替换、空数组清空；仅接受权限目录内编码（非法编码整体拒绝），且只能授予操作者持有的权限，变更即时生效")
+    @SaCheckPermission(value = AdminPermissionCodes.ROLE_ASSIGN_PERMISSION, type = "admin")
+    @Log("分配角色权限")
+    public Result<Void> replaceRolePermissions(@PathVariable Long id, @Valid @RequestBody RolePermissionsRequest request) {
+        service.replaceRolePermissions(PetTownToken.ADMIN.getLoginIdAsLong(), id, request.permissions());
+        return Result.success();
     }
 
     @PostMapping

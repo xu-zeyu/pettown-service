@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 class AdminAccountUpdateApiTests {
     @Autowired private MockMvc mvc;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private cn.dev33.satoken.stp.StpInterface stpInterface;
     private long superId;
     private long limitedId;
     private long targetId;
@@ -39,6 +40,10 @@ class AdminAccountUpdateApiTests {
 
     @BeforeEach
     void setUp() {
+        // 其他测试类的上下文会把各自的 StpInterface/SaTokenDao 注册到全局 SaManager，先恢复本上下文的实现，
+        // 保证权限解析与本测试事务同连接（否则看不到未提交的夹具数据，权限校验间歇性 403）。
+        cn.dev33.satoken.SaManager.setSaTokenDao(new cn.dev33.satoken.dao.SaTokenDaoDefaultImpl());
+        cn.dev33.satoken.SaManager.setStpInterface(stpInterface);
         superId = insertAccount("edit_super", true);
         limitedId = insertAccount("edit_limited", false);
         targetId = insertAccount("edit_target", false);

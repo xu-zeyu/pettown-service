@@ -44,7 +44,8 @@ class AdminOpenApiTests {
                             "/api/admin/system/roles", "/api/admin/system/roles/{id}",
                             "/api/admin/users", "/api/admin/users/{id}", "/api/admin/users/{id}/status",
                             "/api/admin/verification/captcha",
-                            "/api/admin/system/permissions", "/api/admin/system/permissions/sync")
+                            "/api/admin/system/permissions", "/api/admin/system/permissions/sync",
+                            "/api/admin/system/roles/{id}/permissions")
                             .contains(entry.getKey())).isTrue();
             for (JsonNode operation : entry.getValue()) {
                 assertThat(operation.path("summary").asText()).isNotBlank();
@@ -52,7 +53,7 @@ class AdminOpenApiTests {
                 operations++;
             }
         }
-        assertThat(operations).isEqualTo(61);
+        assertThat(operations).isEqualTo(63);
         assertThat(paths.path("/mng/create").path("post").path("description").asText()).contains("SHA-256");
         assertThat(paths.path("/mng/permission/batchSync").path("post").path("description").asText()).contains("SUB_ADMIN", "事务");
         assertThat(paths.path("/mng/auth/login").path("post").path("security").size()).isZero();
