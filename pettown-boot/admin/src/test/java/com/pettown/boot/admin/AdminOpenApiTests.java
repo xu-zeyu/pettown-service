@@ -43,6 +43,7 @@ class AdminOpenApiTests {
                             "/api/admin/system/accounts/{id}/status", "/api/admin/system/accounts/{id}/reset-password",
                             "/api/admin/system/roles", "/api/admin/system/roles/{id}",
                             "/api/admin/users", "/api/admin/users/{id}", "/api/admin/users/{id}/status",
+                            "/api/admin/users/{id}/pets",
                             "/api/admin/verification/captcha",
                             "/api/admin/system/permissions", "/api/admin/system/permissions/sync",
                             "/api/admin/system/roles/{id}/permissions")
@@ -53,7 +54,7 @@ class AdminOpenApiTests {
                 operations++;
             }
         }
-        assertThat(operations).isEqualTo(63);
+        assertThat(operations).isEqualTo(64);
         assertThat(paths.path("/mng/create").path("post").path("description").asText()).contains("SHA-256");
         assertThat(paths.path("/mng/permission/batchSync").path("post").path("description").asText()).contains("SUB_ADMIN", "事务");
         assertThat(paths.path("/mng/auth/login").path("post").path("security").size()).isZero();
@@ -109,11 +110,17 @@ class AdminOpenApiTests {
         assertThat(roleItem.path("get").path("description").asText()).contains("system:role:read");
         assertThat(roleItem.path("put").path("description").asText()).contains("system:role:update");
         assertThat(roleItem.path("delete").path("description").asText()).contains("system:role:delete");
-        for (String path : Set.of("/api/admin/users", "/api/admin/users/{id}")) {
+        for (String path : Set.of("/api/admin/users", "/api/admin/users/{id}", "/api/admin/users/{id}/pets")) {
             JsonNode operation = paths.path(path).path("get");
             assertThat(operation.path("security").get(0).has("bearerAuth")).isTrue();
             assertThat(operation.path("description").asText()).contains("biz:user:read");
         }
+        JsonNode userPetsSchema = document.path("components").path("schemas").path("AdminUserPetsResponse")
+                .path("properties");
+        assertThat(userPetsSchema.has("userId")).isTrue();
+        assertThat(userPetsSchema.has("petCount")).isTrue();
+        assertThat(userPetsSchema.has("pets")).isTrue();
+        assertThat(userPetsSchema.has("passwordHash")).isFalse();
         JsonNode userStatus = paths.path("/api/admin/users/{id}/status").path("put");
         assertThat(paths.path("/api/admin/users").path("get").path("parameters").findValuesAsText("name"))
                 .contains("page", "size", "phone", "source").doesNotContain("sizeValid");
