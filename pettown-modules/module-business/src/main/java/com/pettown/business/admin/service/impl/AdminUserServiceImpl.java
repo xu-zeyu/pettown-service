@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.pettown.business.admin.constant.AdminPermissionCodes;
 import com.pettown.business.admin.service.AdminUserService;
+import com.pettown.business.pet.entity.Pet;
+import com.pettown.business.pet.mapper.PetMapper;
 import com.pettown.business.user.entity.User;
 import com.pettown.business.user.entity.UserStatus;
 import com.pettown.business.user.mapper.UserMapper;
@@ -13,16 +15,19 @@ import com.pettown.common.exception.ErrorCodeEnum;
 import com.pettown.common.mybatis.PageParam;
 import com.pettown.common.mybatis.PageResult;
 import com.pettown.common.security.config.PetTownToken;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AdminUserServiceImpl implements AdminUserService {
     private final UserMapper users;
+    private final PetMapper pets;
     private final AdminAccessPolicy policy;
 
-    public AdminUserServiceImpl(UserMapper users, AdminAccessPolicy policy) {
+    public AdminUserServiceImpl(UserMapper users, PetMapper pets, AdminAccessPolicy policy) {
         this.users = users;
+        this.pets = pets;
         this.policy = policy;
     }
 
@@ -38,6 +43,16 @@ public class AdminUserServiceImpl implements AdminUserService {
     @Override
     public User getUser(String id) {
         return users.findById(id).orElseThrow(() -> new BusinessException(ErrorCodeEnum.NOT_FOUND, "用户不存在"));
+    }
+
+    @Override
+    public List<Pet> listUserPets(String id) {
+        getUser(id);
+        // @TableLogic 自动排除软删；排序与移动端宠物列表一致（createdTime 倒序、id 倒序）
+        return pets.selectList(new LambdaQueryWrapper<Pet>()
+                .eq(Pet::getOwnerId, id)
+                .orderByDesc(Pet::getCreatedTime)
+                .orderByDesc(Pet::getId));
     }
 
     @Override

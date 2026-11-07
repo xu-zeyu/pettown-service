@@ -68,6 +68,7 @@ springdoc:
     - /api/admin/users
     - /api/admin/users/{id}
     - /api/admin/users/{id}/status
+    - /api/admin/users/{id}/pets
     - /api/admin/verification/captcha
     - /api/admin/system/permissions
     - /api/admin/system/permissions/sync

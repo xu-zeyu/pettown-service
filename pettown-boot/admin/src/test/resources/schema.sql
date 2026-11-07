@@ -67,3 +67,19 @@ INSERT INTO admin_permission (name, code) SELECT '管理后台权限与子管理
 INSERT INTO admin_permission (name, code) SELECT '删除管理员', 'system:account:delete' WHERE NOT EXISTS (SELECT 1 FROM admin_permission WHERE code = 'system:account:delete');
 INSERT INTO admin_permission (name, code) SELECT '查看 C 端用户', 'biz:user:read' WHERE NOT EXISTS (SELECT 1 FROM admin_permission WHERE code = 'biz:user:read');
 INSERT INTO admin_permission (name, code) SELECT '封禁解封 C 端用户', 'biz:user:status' WHERE NOT EXISTS (SELECT 1 FROM admin_permission WHERE code = 'biz:user:status');
+CREATE TABLE IF NOT EXISTS pet (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    species VARCHAR(30) NOT NULL,
+    owner_id VARCHAR(31) NOT NULL,
+    breed VARCHAR(100),
+    gender VARCHAR(16),
+    birth_date DATE,
+    weight_kg DECIMAL(5,2),
+    sterilized BOOLEAN,
+    avatar_url VARCHAR(2048),
+    deleted INT NOT NULL DEFAULT 0,
+    created_time TIMESTAMP NOT NULL,
+    updated_time TIMESTAMP NOT NULL,
+    INDEX idx_pet_owner_id (owner_id)
+);

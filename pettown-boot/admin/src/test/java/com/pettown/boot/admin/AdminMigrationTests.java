@@ -43,9 +43,10 @@ class AdminMigrationTests {
     void freshDeploymentSqlMatchesTheSchemaUsedByHttpTests() throws Exception {
         String deployment = new ClassPathResource("admin-deployment.sql").getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
         String testSchema = new ClassPathResource("schema.sql").getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        // 管理端 HTTP 测试额外建 C 端用户表；管理员基础建表脚本仍只创建管理员表。
-        String adminOnlyTestSchema = testSchema.replaceFirst(
-                "(?s)CREATE TABLE IF NOT EXISTS user_account \\(.*?\\);\\n\\n", "");
+        // 管理端 HTTP 测试额外建 C 端用户表与宠物表；管理员基础建表脚本仍只创建管理员表。
+        String adminOnlyTestSchema = testSchema
+                .replaceFirst("(?s)CREATE TABLE IF NOT EXISTS user_account \\(.*?\\);\\n\\n", "")
+                .replaceFirst("(?s)\\nCREATE TABLE IF NOT EXISTS pet \\(.*?\\);\\n", "\n");
         assertThat(deployment).isEqualTo(adminOnlyTestSchema);
         var database = new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2)
                 .setName("admin-fresh;MODE=MySQL").addScript("admin-deployment.sql").build();

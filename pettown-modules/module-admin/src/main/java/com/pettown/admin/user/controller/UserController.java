@@ -2,6 +2,7 @@ package com.pettown.admin.user.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.pettown.admin.user.dto.UserStatusRequest;
+import com.pettown.admin.user.vo.AdminUserPetsResponse;
 import com.pettown.admin.user.vo.AdminUserResponse;
 import com.pettown.business.admin.constant.AdminPermissionCodes;
 import com.pettown.business.admin.service.AdminUserService;
@@ -50,6 +51,13 @@ public class UserController {
     @SaCheckPermission(value = AdminPermissionCodes.USER_READ, type = "admin")
     public Result<AdminUserResponse> get(@PathVariable String id) {
         return Result.success(AdminUserResponse.from(service.getUser(id)));
+    }
+
+    @GetMapping("/{id}/pets")
+    @Operation(summary = "查看 C 端用户宠物数据", description = "需要 biz:user:read；返回该用户宠物列表与数量（不含健康记录明细），字段与移动端一致，不返回密码散列等敏感字段")
+    @SaCheckPermission(value = AdminPermissionCodes.USER_READ, type = "admin")
+    public Result<AdminUserPetsResponse> pets(@PathVariable String id) {
+        return Result.success(AdminUserPetsResponse.from(id, service.listUserPets(id)));
     }
 
     @PutMapping("/{id}/status")
