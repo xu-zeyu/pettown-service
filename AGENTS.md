@@ -18,5 +18,5 @@
 
 - “生成 <版本> 版本需求”等口语指令读取 `.ai/agents/研发Agent.md`、`.ai/skills/tapd-requirement-intake/SKILL.md` 与工作流 02/03，按版本完成需求池、评分评审、TAPD 入库回读和企业微信创建通知。
 - “开始 <版本> 代码编写”等口语指令读取 `.ai/agents/研发Agent.md`、`.ai/skills/tapd-version-delivery/SKILL.md` 与工作流 04/05/06。从 TAPD 整理清单，按 P0→P3 及依赖逐项独立分支执行；当前项开始通知、代码审查、自测、合并核对和完成通知结束后才能开始下一项。
-- “进行 <模块> 的全量测试”“测试 <模块> 接口”等口语指令先读取 `.ai/agents/测试Agent.md` 和 `.ai/workflows/07-模块自动化测试.md` 做路由；后端 HTTP 接口模块走 `.ai/skills/api-regression-testing/SKILL.md`。必须先将本次涉及的每个项目的 API 上传至各自 Apifox 项目并回读核对，成功后才编写、执行用例。多项目场景须向用户逐一确认“项目 ID → Apifox 项目 ID”，并串联验证项目间全部已确认的关联业务链路；任何链路未通过，不得宣称跨项目业务已打通。凭证配置于 `.ai/skills/api-regression-testing/.env`（参照同目录 `.env.example`）；上传受阻时报告缺口并停止本批测试，不以本地执行代替上传。
+- “进行 <模块> 的全量测试”“测试 <模块> 接口”等口语指令先读取 `.ai/agents/测试Agent.md` 和 `.ai/workflows/07-模块自动化测试.md` 做路由；后端 HTTP 接口模块走 `.ai/skills/api-regression-testing/SKILL.md`。必须先将本次涉及的每个项目/服务的 API 用 Apifox 官方格式导入各自目标并导出回读核对，成功后才编写、执行用例。多项目场景须向用户逐一确认“项目 ID → Apifox 项目 ID”，同项目多服务也须确认各服务目标；串联验证全部已确认关联业务链路。可复现缺陷按已核实产品 ID 通过禅道 MCP 创建并回读，随后使用共享 `.ai/skills/wecom-notification/SKILL.md` 通知；产品 ID 不明时不入库。凭证配置于 `.ai/skills/api-regression-testing/.env`；上传受阻时停止本批测试，不以本地执行代替上传。
 - 以上口语指令的授权范围按 `.ai/core/人工审批规范.md` 执行；不推断具体 TAPD 版本或记录，不自动关闭 TAPD 事项。

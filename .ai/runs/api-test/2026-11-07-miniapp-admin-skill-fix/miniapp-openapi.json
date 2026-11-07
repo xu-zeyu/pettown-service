@@ -1,0 +1,1109 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PetTown 小程序接口",
+    "description": "小程序账号与验证码接口；统一使用 Result<T> 响应",
+    "version": "0.0.1"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8082",
+      "description": "已确认的本机非生产测试地址"
+    }
+  ],
+  "paths": {
+    "/api/miniapp/user/profile": {
+      "put": {
+        "tags": [
+          "小程序登录管理"
+        ],
+        "summary": "修改当前用户资料（昵称/头像）",
+        "operationId": "updateProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultUserInfoResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/miniapp/pets/{id}": {
+      "get": {
+        "tags": [
+          "小程序宠物档案"
+        ],
+        "summary": "查询我的宠物详情",
+        "description": "仅返回当前用户的完整宠物档案；他人宠物与不存在的 ID 统一返回不存在",
+        "operationId": "detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPetProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "小程序宠物档案"
+        ],
+        "summary": "编辑我的宠物档案",
+        "description": "仅归属用户可编辑；字段校验同创建，未提供的可选字段清空",
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePetProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPetProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "小程序宠物档案"
+        ],
+        "summary": "删除我的宠物",
+        "description": "仅归属用户可删除；宠物及关联健康记录逻辑删除，重复删除返回不存在",
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/miniapp/verification/code": {
+      "post": {
+        "tags": [
+          "小程序登录管理"
+        ],
+        "summary": "写入小程序验证码至 Redis",
+        "description": "验证码有效期 5 分钟，仅供从 Redis 获取；未发送短信。/code 为兼容路径并共用限流",
+        "operationId": "generate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/miniapp/verification/send": {
+      "post": {
+        "tags": [
+          "小程序登录管理"
+        ],
+        "summary": "写入小程序验证码至 Redis",
+        "description": "验证码有效期 5 分钟，仅供从 Redis 获取；未发送短信。/code 为兼容路径并共用限流",
+        "operationId": "generate_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/miniapp/pets": {
+      "get": {
+        "tags": [
+          "小程序宠物档案"
+        ],
+        "summary": "查询我的宠物列表",
+        "description": "仅返回当前用户宠物，按创建时间倒序；非法分页参数使用默认 page=1、size=10",
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPageResultPetProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "小程序宠物档案"
+        ],
+        "summary": "创建宠物档案",
+        "description": "当前登录用户最多创建 20 只；物种为 CAT、DOG 或 OTHER",
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePetProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPetProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/miniapp/pets/{petId}/health-records": {
+      "get": {
+        "tags": [
+          "小程序宠物健康记录"
+        ],
+        "summary": "查询宠物健康记录",
+        "description": "仅宠物归属用户可查看，按记录日期倒序，支持类型筛选和分页",
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "name": "petId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPageResultPetHealthRecordResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "小程序宠物健康记录"
+        ],
+        "summary": "新增宠物健康记录",
+        "description": "仅宠物归属用户可新增，记录日期不能晚于今天",
+        "operationId": "create_1",
+        "parameters": [
+          {
+            "name": "petId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePetHealthRecordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPetHealthRecordResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/miniapp/files/upload": {
+      "post": {
+        "tags": [
+          "小程序图片上传"
+        ],
+        "summary": "上传图片（头像/宠物照）",
+        "operationId": "upload",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultFileUploadResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/miniapp/auth/logout": {
+      "post": {
+        "tags": [
+          "小程序登录管理"
+        ],
+        "summary": "退出登录",
+        "description": "注销当前 USER Token；原 Token 立即不能访问受保护接口",
+        "operationId": "logout",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/miniapp/auth/login": {
+      "post": {
+        "tags": [
+          "小程序登录管理"
+        ],
+        "summary": "手机号密码及验证码登录，首次登录自动注册",
+        "description": "首次注册的用户来源从 User-Agent 自动识别，无需在请求体传递；后续登录不修改注册来源",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultAuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/miniapp/user/me": {
+      "get": {
+        "tags": [
+          "小程序登录管理"
+        ],
+        "summary": "获取当前用户信息",
+        "operationId": "me",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultUserInfoResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/miniapp/home/summary": {
+      "get": {
+        "tags": [
+          "小程序首页"
+        ],
+        "summary": "首页聚合概览（宠物数量/卡片/未来7天提醒数）",
+        "operationId": "summary",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultHomeSummaryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/miniapp/files/{fileId}": {
+      "get": {
+        "tags": [
+          "小程序图片上传"
+        ],
+        "summary": "读取已上传图片",
+        "operationId": "read",
+        "parameters": [
+          {
+            "name": "fileId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "byte"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UpdateProfileRequest": {
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "ResultUserInfoResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserInfoResponse"
+          }
+        }
+      },
+      "UserInfoResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "IOS",
+              "ANDROID",
+              "HARMONY_OS",
+              "MINI_PROGRAM",
+              "WEB",
+              "UNKNOWN"
+            ]
+          },
+          "registeredTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreatePetProfileRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 0
+          },
+          "species": {
+            "type": "string",
+            "enum": [
+              "CAT",
+              "DOG",
+              "OTHER"
+            ]
+          },
+          "breed": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "gender": {
+            "type": "string",
+            "maxLength": 16,
+            "minLength": 0
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "weightKg": {
+            "type": "number",
+            "maximum": 200.0,
+            "minimum": 0.0
+          },
+          "sterilized": {
+            "type": "boolean"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "name",
+          "species"
+        ]
+      },
+      "PetProfileResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "species": {
+            "type": "string"
+          },
+          "breed": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "weightKg": {
+            "type": "number"
+          },
+          "sterilized": {
+            "type": "boolean"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "createdTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ResultPetProfileResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PetProfileResponse"
+          }
+        }
+      },
+      "VerificationCodeRequest": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^1[3-9]\\d{9}$"
+          },
+          "type": {
+            "type": "string",
+            "description": "验证码用途：LOGIN_REGISTER 登录即注册、RESET_PASSWORD 重置密码",
+            "enum": [
+              "LOGIN_REGISTER",
+              "ADMIN_LOGIN",
+              "RESET_PASSWORD"
+            ]
+          }
+        },
+        "required": [
+          "phone",
+          "type"
+        ]
+      },
+      "ResultVoid": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {}
+        }
+      },
+      "CreatePetHealthRecordRequest": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "VACCINE",
+              "DEWORM",
+              "WEIGHT",
+              "OTHER"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "recordDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 0
+          },
+          "nextReminderDate": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "recordDate",
+          "title",
+          "type"
+        ]
+      },
+      "PetHealthRecordResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "petId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "recordDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "nextReminderDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "createdTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ResultPetHealthRecordResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PetHealthRecordResponse"
+          }
+        }
+      },
+      "FileUploadResponse": {
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "ResultFileUploadResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/FileUploadResponse"
+          }
+        }
+      },
+      "AuthRequest": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "中国大陆手机号",
+            "minLength": 1,
+            "pattern": "^1[3-9]\\d{9}$"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "账号密码；8 到 72 位非空格 ASCII 字符",
+            "minLength": 1,
+            "pattern": "^[\\x21-\\x7E]{8,72}$",
+            "writeOnly": true
+          },
+          "verificationCode": {
+            "type": "string",
+            "description": "六位数字验证码；登录即注册用途",
+            "minLength": 1,
+            "pattern": "^[0-9]{6}$",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "password",
+          "phone",
+          "verificationCode"
+        ]
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          }
+        }
+      },
+      "ResultAuthResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AuthResponse"
+          }
+        }
+      },
+      "PageResultPetProfileResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PetProfileResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ResultPageResultPetProfileResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultPetProfileResponse"
+          }
+        }
+      },
+      "PageResultPetHealthRecordResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PetHealthRecordResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ResultPageResultPetHealthRecordResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultPetHealthRecordResponse"
+          }
+        }
+      },
+      "HomeSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "petCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "petCards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PetCard"
+            }
+          },
+          "upcomingReminderCount": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PetCard": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "species": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "ResultHomeSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HomeSummaryResponse"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "小程序登录后返回的 Token，请通过 Authorization: Bearer <token> 请求头传递",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

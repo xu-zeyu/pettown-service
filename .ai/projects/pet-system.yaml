@@ -32,6 +32,12 @@ project:
     # 新需求默认负责人；入库前仍须在当前 TAPD 项目空间核对成员
     default_owner: "徐泽宇"
 
+  # 用户说明使用禅道开源版 22.7；产品 ID 仍待核实，不能用 TAPD/Apifox/禅道项目 ID 代替
+  zentao:
+    edition: "open-source"
+    version: "22.7"
+    product_id: null
+
   # 经核实的产品背景
   product:
     # 目标用户群体

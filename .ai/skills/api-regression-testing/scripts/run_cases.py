@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Run ordered HTTP cases after every project's Apifox import is verified.
 
-Collection: {"apifox_uploads": {"project-id": {"project_id": "123",
-"verified": true, "evidence": "path/to/readback"}}, "cases": [{"name": "...",
+Collection: {"apifox_uploads": {"project-id": {"receipt_path": "path/to/apifox-receipt.json"}},
+"cases": [{"name": "...",
 "project": "project-id", "method": "POST", "path": "/...", "capture":
 {"shared_id": "data.id"}, "expect": {"status": 200}}], "required_flows":
 ["business-flow"]}. Later cases can use
@@ -11,12 +11,15 @@ project IDs come from .env; no HTTP request runs without matching upload receipt
 """
 
 import json
+import hashlib
 import re
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
+
+from apifox_sync import SyncError, operations
 
 TYPES = {"str": str, "int": int, "float": (int, float), "bool": bool,
          "list": list, "dict": dict, "null": type(None)}
@@ -124,12 +127,31 @@ def configuration(settings, collection):
         bases.setdefault("default", settings.get("API_BASE_URL", ""))
     receipts = collection.get("apifox_uploads") or {}
     for project in projects:
-        receipt = receipts.get(project) or {}
+        receipt_ref = receipts.get(project) or {}
+        receipt_path = Path(receipt_ref.get("receipt_path") or "")
+        if not receipt_path.is_file():
+            raise ValueError(f"Apifox receipt missing for {project}")
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        evidence = Path(receipt.get("evidence") or "")
+        source_spec = Path(receipt.get("source_spec") or "")
         if (not ids.get(project) or not bases.get(project)
                 or receipt.get("project_id") != ids[project]
+                or receipt.get("target_key") != project
                 or receipt.get("verified") is not True
-                or not receipt.get("evidence")):
+                or not isinstance(receipt.get("expected_operations"), int)
+                or receipt["expected_operations"] < 1
+                or receipt.get("observed_operations") != receipt["expected_operations"]
+                or receipt.get("missing_operations")
+                or not evidence.is_file()
+                or not source_spec.is_file()):
             raise ValueError(f"Apifox upload or test environment unverified for {project}")
+        if hashlib.sha256(source_spec.read_bytes()).hexdigest() != receipt.get("source_sha256"):
+            raise ValueError(f"Apifox source changed after verification for {project}")
+        expected_operations = operations(json.loads(source_spec.read_text(encoding="utf-8")))
+        exported_operations = operations(json.loads(evidence.read_text(encoding="utf-8")),
+                                         require_nonempty=False)
+        if expected_operations - exported_operations:
+            raise ValueError(f"Apifox export missing operations for {project}")
         if not bases[project].startswith(("http://", "https://")):
             raise ValueError(f"invalid test environment for {project}")
     return cases, bases
@@ -142,7 +164,7 @@ def main() -> int:
     try:
         collection = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
         cases, bases = configuration(load_env(), collection)
-    except (OSError, ValueError, TypeError, KeyError) as error:
+    except (OSError, ValueError, TypeError, KeyError, SyncError) as error:
         print(json.dumps({"status": "configuration_invalid", "reason": str(error)}))
         return 2
     variables = {}

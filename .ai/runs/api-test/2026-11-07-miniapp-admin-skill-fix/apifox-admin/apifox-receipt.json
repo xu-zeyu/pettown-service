@@ -1,0 +1,9 @@
+{
+  "target_key": "pet-system/admin",
+  "project_id": "9001157",
+  "source_spec": "/Users/xuzeyu/Documents/company/jinHan/pettown-server/.ai/runs/api-test/2026-11-07-miniapp-admin-skill-fix/admin-openapi.json",
+  "source_sha256": "ffbdf027ee74e4e8ccc2bdd01eb1c81b022313fc75a5881cb682bfbf9ebc189c",
+  "expected_operations": 64,
+  "verified": false,
+  "import_attempted": false
+}

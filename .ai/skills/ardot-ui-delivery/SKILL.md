@@ -23,4 +23,4 @@ Ardot 以 MCP 接入，文档为 `https://docs.ardot.tencent.com/ardot-mcp/intro
 
 ## 通知
 
-使用 `../tapd-requirement-intake/scripts/send_wecom.py` 的已配置机器人，仅在全部本次图片已入项并回读后发送一次汇总通知。发送结果不明确时先核查，勿重发；成功后把同一脱敏回执摘要记入各屏幕台账。报告分别列出生成、入项和通知状态，不把待确认事项写成完成。
+加载 `../wecom-notification/SKILL.md`，使用 `../wecom-notification/scripts/send_wecom.py` 的已配置机器人，仅在全部本次图片已入项并回读后发送一次汇总通知。发送结果不明确时先核查，勿重发；成功后把同一脱敏回执摘要记入各屏幕台账。报告分别列出生成、入项和通知状态，不把待确认事项写成完成。

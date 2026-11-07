@@ -9,7 +9,7 @@
 - `core`：所有项目共用的基本规则、审批要求和工具使用规范。
 - `agents/研发Agent.md`：研发 Agent 的执行入口，包含开发前读取、逐需求分支、红绿对抗自测和合并闸门。
 - `agents/原型Agent.md`、`agents/ArdotUIAgent.md`：从 TAPD 需求依次产出原型思维与 UI 图片。
-- `agents/测试Agent.md`：模块测试入口，约束 Apifox 上传先行与多项目端到端链路验证。
+- `agents/测试Agent.md`：模块测试入口，约束 Apifox 上传回读先行、关联链路验证和禅道 Bug 入库回读。
 - `workflows`：跨技术栈通用工作流。执行前必须读取当前项目配置。
 - `config`：工作空间配置、项目注册表和技术栈配置。
 - `projects`：每个项目一份独立 YAML 配置。
@@ -18,7 +18,8 @@
 - `requirements`：候选需求和审批归档。
 - `skills/tapd-requirement-intake`：需求评分、TAPD 入库回读与企业微信通知。
 - `skills/tapd-version-delivery`：版本 TAPD 清单、P 级排序、逐项分支开发与审查自测合并、开始/完成通知。
-- `skills/api-regression-testing`：模块接口自动化测试闭环（接口识别、上传 Apifox、可执行用例、运行报告、企业微信通知）。
+- `skills/api-regression-testing`：模块接口自动化测试闭环（接口识别、Apifox 导入回读、红绿对抗用例、禅道 Bug 入库、运行报告）。
+- `skills/wecom-notification`：研发、需求、UI、测试共用的企业微信群目标核实、发送与回执规则。
 - `skills/ardot-ui-delivery`：UI 排重台账、Ardot 入项回读与企业微信通知。
 - `runs`：需求执行过程中的产物与证据。
 
@@ -45,7 +46,7 @@
 | 技术设计 | `04-技术设计与任务拆解.md` | 技术方案与任务清单 | 方案与拆解按授权范围审批；版本开发指令覆盖已批准需求内的常规实现，创建 TAPD 子任务另需明确授权 |
 | 开发执行 | `05-开发执行.md` | 代码、测试及执行记录 | 本次代码修改已获授权 |
 | 测试交付 | `06-测试与交付.md` | 测试报告、交付报告 | 审查、自测及合并闸门通过后执行已授权的 Git 操作；TAPD 状态和发布另按授权范围处理 |
-| 模块自动化测试 | `07-模块自动化测试.md` | 按模块画像路由到 API 测试等 Agent；接口清单、用例、测试报告 | 指令授权接口扫描、Apifox 上传、用例执行与通知；缺陷入库、代码修复另按授权范围处理 |
+| 模块自动化测试 | `07-模块自动化测试.md` | 按模块画像路由到 API 测试等 Agent；接口清单、用例、禅道 Bug 与测试报告 | 指令授权接口扫描、Apifox 上传回读、用例执行、可复现缺陷禅道入库及已确认目标通知；TAPD 缺陷和代码修复另按授权范围处理 |
 | 原型与 UI | `08-原型与ArdotUI.md` | TAPD 原型、UI 图片、台账、Ardot 入项及通知 | 指令授权当前需求的 UI 交付；Ardot 与通知须回读成功 |
 
 工作流文件位于 `workflows/`。各阶段使用的模板位于 `templates/`；审批要求以 `core/人工审批规范.md` 为准。
