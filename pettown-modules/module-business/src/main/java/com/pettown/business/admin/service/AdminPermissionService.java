@@ -26,4 +26,7 @@ public interface AdminPermissionService {
 
     /** 批量同步：只新增缺失编码，已有名称不覆盖、不删除旧项，同批重复编码只创建一次。 */
     void syncPermissions(Long actorId, List<AdminService.PermissionDefinition> permissions);
+
+    /** 将 AdminPermissionCodes 内置编码按目录名称幂等补入 admin_permission 表；只补表中缺失行，不覆盖名称、不删除旧项。 */
+    void syncBuiltinPermissions(Long actorId);
 }
