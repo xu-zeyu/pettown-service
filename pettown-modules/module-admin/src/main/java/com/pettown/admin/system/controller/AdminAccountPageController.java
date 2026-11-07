@@ -5,9 +5,12 @@ import com.pettown.admin.system.dto.AdminAccountSearchRequest;
 import com.pettown.admin.system.dto.StatusRequest;
 import com.pettown.admin.system.dto.V1CreateAccountRequest;
 import com.pettown.admin.system.dto.V1ResetPasswordRequest;
+import com.pettown.admin.system.dto.V1UpdateAccountRequest;
 import com.pettown.admin.system.vo.AccountResponse;
 import com.pettown.business.admin.constant.AdminPermissionCodes;
 import com.pettown.business.admin.service.AdminService;
+import com.pettown.common.exception.BusinessException;
+import com.pettown.common.exception.ErrorCodeEnum;
 import com.pettown.common.log.annotation.Log;
 import com.pettown.common.mybatis.PageResult;
 import com.pettown.common.result.Result;
@@ -56,6 +59,26 @@ public class AdminAccountPageController {
         return Result.success(AccountResponse.from(service.createV1Account(
                 PetTownToken.ADMIN.getLoginIdAsLong(), request.username(), request.displayName(),
                 request.password(), request.phone(), request.roleId())));
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "编辑管理员账号", description = "修改显示名/手机号需 system:account:update，分配角色需 system:account:assign-role；不能修改自己、超级管理员或越权账号（含禁止修改自身角色）；roleId 不传表示不改角色")
+    @Log("编辑管理员账号")
+    public Result<AccountResponse> update(@PathVariable Long id, @Valid @RequestBody V1UpdateAccountRequest request) {
+        if (request.displayName() == null && request.phone() == null && request.roleId() == null) {
+            throw new BusinessException(ErrorCodeEnum.FAIL, "显示名、手机号与角色不能同时为空");
+        }
+        Long actorId = PetTownToken.ADMIN.getLoginIdAsLong();
+        if (request.displayName() != null || request.phone() != null) {
+            var current = service.getAccount(id);
+            service.updateAccount(actorId, id,
+                    request.displayName() != null ? request.displayName() : current.getDisplayName(),
+                    request.phone() != null ? request.phone() : current.getPhone());
+        }
+        if (request.roleId() != null) {
+            service.assignAccountRole(actorId, id, request.roleId());
+        }
+        return Result.success(AccountResponse.from(service.getAccount(id)));
     }
 
     @PutMapping("/{id}/status")

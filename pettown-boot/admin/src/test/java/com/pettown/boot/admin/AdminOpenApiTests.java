@@ -51,7 +51,7 @@ class AdminOpenApiTests {
                 operations++;
             }
         }
-        assertThat(operations).isEqualTo(58);
+        assertThat(operations).isEqualTo(59);
         assertThat(paths.path("/mng/create").path("post").path("description").asText()).contains("SHA-256");
         assertThat(paths.path("/mng/permission/batchSync").path("post").path("description").asText()).contains("SUB_ADMIN", "事务");
         assertThat(paths.path("/mng/auth/login").path("post").path("security").size()).isZero();
