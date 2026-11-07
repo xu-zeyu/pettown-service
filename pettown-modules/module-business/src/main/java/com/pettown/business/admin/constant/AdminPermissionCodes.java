@@ -1,6 +1,9 @@
 package com.pettown.business.admin.constant;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -53,5 +56,27 @@ public final class AdminPermissionCodes {
                 ACCOUNT_RESET_PASSWORD, ACCOUNT_ASSIGN_ROLE, ACCOUNT_DELETE,
                 ROLE_READ, ROLE_CREATE, ROLE_UPDATE, ROLE_DELETE, ROLE_ASSIGN_PERMISSION,
                 PERMISSION_READ, USER_READ, USER_STATUS, SUB_ADMIN)));
+    }
+
+    /** 内置编码的目录名称，与 docs/sql/admin.sql 内置目录一一对应，供权限目录同步使用。 */
+    public static Map<String, String> builtinNames() {
+        Map<String, String> names = new LinkedHashMap<>();
+        names.put(ACCOUNT_READ, "查看管理员");
+        names.put(ACCOUNT_CREATE, "创建管理员");
+        names.put(ACCOUNT_UPDATE, "修改管理员");
+        names.put(ACCOUNT_STATUS, "启停管理员");
+        names.put(ACCOUNT_RESET_PASSWORD, "重置管理员密码");
+        names.put(ACCOUNT_ASSIGN_ROLE, "分配管理员角色");
+        names.put(ACCOUNT_DELETE, "删除管理员");
+        names.put(ROLE_READ, "查看角色");
+        names.put(ROLE_CREATE, "创建角色");
+        names.put(ROLE_UPDATE, "修改角色");
+        names.put(ROLE_DELETE, "删除角色");
+        names.put(ROLE_ASSIGN_PERMISSION, "分配角色权限");
+        names.put(PERMISSION_READ, "查看权限点");
+        names.put(SUB_ADMIN, "管理后台权限与子管理员");
+        names.put(USER_READ, "查看 C 端用户");
+        names.put(USER_STATUS, "封禁解封 C 端用户");
+        return Collections.unmodifiableMap(names);
     }
 }

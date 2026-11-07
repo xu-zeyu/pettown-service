@@ -69,4 +69,6 @@ springdoc:
     - /api/admin/users/{id}
     - /api/admin/users/{id}/status
     - /api/admin/verification/captcha
+    - /api/admin/system/permissions
+    - /api/admin/system/permissions/sync
   default-flat-param-object: true

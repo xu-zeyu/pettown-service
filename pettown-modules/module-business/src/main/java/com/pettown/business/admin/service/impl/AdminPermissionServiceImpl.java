@@ -14,6 +14,7 @@ import com.pettown.business.admin.service.AdminPermissionService;
 import com.pettown.business.admin.service.AdminService;
 import com.pettown.common.mybatis.PageParam;
 import com.pettown.common.mybatis.PageResult;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,6 +123,28 @@ public class AdminPermissionServiceImpl implements AdminPermissionService {
         additions.forEach((code, name) -> {
             if (!existingCodes.contains(code)) {
                 insertPermission(name, code);
+            }
+        });
+    }
+
+    @Override
+    @Transactional
+    public void syncBuiltinPermissions(Long actorId) {
+        policy.authorizeWrite(actorId, AdminPermissionCodes.SUB_ADMIN);
+        // 以表行为准判断缺失：内置编码可能因未执行 SQL 脚本而整行缺失。
+        Set<String> existing = new HashSet<>();
+        permissions.selectList().forEach(record -> existing.add(record.getCode()));
+        AdminPermissionCodes.builtinNames().forEach((code, name) -> {
+            if (existing.contains(code)) {
+                return;
+            }
+            AdminPermissionRecord permission = new AdminPermissionRecord();
+            permission.setName(name);
+            permission.setCode(code);
+            try {
+                permissions.insert(permission);
+            } catch (DuplicateKeyException concurrent) {
+                // 并发同步同一编码视为已补入，保持幂等。
             }
         });
     }

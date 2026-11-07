@@ -268,4 +268,9 @@ public class AdminServiceImpl implements AdminService {
     public void syncPermissions(Long actorId, List<PermissionDefinition> definitions) {
         permissions.syncPermissions(actorId, definitions);
     }
+
+    @Override
+    public void syncBuiltinPermissions(Long actorId) {
+        permissions.syncBuiltinPermissions(actorId);
+    }
 }
