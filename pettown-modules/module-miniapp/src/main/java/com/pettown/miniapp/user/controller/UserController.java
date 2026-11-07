@@ -30,7 +30,7 @@ public class UserController {
         PetTownToken.USER.checkLogin();
         User user = userMapper.selectById(PetTownToken.USER.getLoginIdAsString());
         return Result.success(new UserInfoResponse(user.getId(), user.getPhone(),
-                user.getNickname(), user.getAvatarUrl()));
+                user.getNickname(), user.getAvatarUrl(), user.getSource(), user.getCreatedAt()));
     }
 
     @PutMapping("/profile")

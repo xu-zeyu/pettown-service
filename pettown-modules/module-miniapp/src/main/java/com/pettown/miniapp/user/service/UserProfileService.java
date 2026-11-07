@@ -42,7 +42,8 @@ public class UserProfileService {
             user.setAvatarUrl(avatarUrl);
         }
         users.updateById(user);
-        return new UserInfoResponse(user.getId(), user.getPhone(), user.getNickname(), user.getAvatarUrl());
+        return new UserInfoResponse(user.getId(), user.getPhone(), user.getNickname(), user.getAvatarUrl(),
+                user.getSource(), user.getCreatedAt());
     }
 
     private String validateNickname(String raw) {
