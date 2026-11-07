@@ -55,6 +55,7 @@ springdoc:
   packages-to-scan: com.pettown.admin
   paths-to-match:
     - /mng/**
+    - /api/admin/auth/login
     - /api/admin/auth/me
     - /api/admin/auth/menus
     - /api/admin/auth/change-password

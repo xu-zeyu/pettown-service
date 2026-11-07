@@ -1,7 +1,11 @@
 package com.pettown.admin.auth.controller;
 
+import cn.dev33.satoken.annotation.SaIgnore;
+import com.pettown.admin.auth.service.AdminLoginService;
 import com.pettown.admin.system.dto.V1ChangePasswordRequest;
+import com.pettown.admin.system.dto.V1LoginRequest;
 import com.pettown.admin.system.vo.AccountResponse;
+import com.pettown.admin.system.vo.LoginResponse;
 import com.pettown.admin.system.vo.MeResponse;
 import com.pettown.admin.system.vo.MenuResponse;
 import com.pettown.admin.system.vo.RoleResponse;
@@ -26,9 +30,19 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "管理后台当前用户")
 public class AdminCurrentAuthController {
     private final AdminService service;
+    private final AdminLoginService loginService;
 
-    public AdminCurrentAuthController(AdminService service) {
+    public AdminCurrentAuthController(AdminService service, AdminLoginService loginService) {
         this.service = service;
+        this.loginService = loginService;
+    }
+
+    @SaIgnore
+    @PostMapping("/login")
+    @Operation(summary = "管理员登录（图形验证码）", description = "公开接口；username+password+图形验证码，连续 5 次密码失败锁定 30 分钟；返回 token 与 passwordChangeRequired")
+    public Result<LoginResponse> login(@Valid @RequestBody V1LoginRequest request) {
+        return Result.success(loginService.login(request.username(), request.password(),
+                request.captchaId(), request.captchaCode()));
     }
 
     @GetMapping("/me")
