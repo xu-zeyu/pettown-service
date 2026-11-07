@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Fallback runner: execute API test cases from a JSON collection and assert.
+"""Run ordered HTTP cases after every project's Apifox import is verified.
 
-Used only when Apifox upload/CLI is unavailable. Input: a JSON file with
-{"cases": [{"name", "method", "path", "headers"?, "query"?, "json"?,
-"expect": {"status"?, "body_contains"?, "json_fields"?}}]}.
-json_fields maps a dotted path (e.g. "data.id") to an expected JSON type name
-(str/int/float/bool/list/dict/null) or an exact value. Output: JSON summary to
-stdout; non-zero exit if any case failed.
+Collection: {"apifox_uploads": {"project-id": {"project_id": "123",
+"verified": true, "evidence": "path/to/readback"}}, "cases": [{"name": "...",
+"project": "project-id", "method": "POST", "path": "/...", "capture":
+{"shared_id": "data.id"}, "expect": {"status": 200}}], "required_flows":
+["business-flow"]}. Later cases can use
+${shared_id} in paths, headers, queries, bodies and expectations. Base URLs and
+project IDs come from .env; no HTTP request runs without matching upload receipts.
 """
 
 import json
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -18,6 +20,7 @@ from pathlib import Path
 
 TYPES = {"str": str, "int": int, "float": (int, float), "bool": bool,
          "list": list, "dict": dict, "null": type(None)}
+VARIABLE = re.compile(r"\$\{([A-Za-z_][A-Za-z_0-9]*)\}")
 
 
 def load_env() -> dict:
@@ -41,6 +44,19 @@ def dig(data, dotted):
     return data, True
 
 
+def substitute(value, variables):
+    if isinstance(value, dict):
+        return {key: substitute(item, variables) for key, item in value.items()}
+    if isinstance(value, list):
+        return [substitute(item, variables) for item in value]
+    if not isinstance(value, str):
+        return value
+    match = VARIABLE.fullmatch(value)
+    if match:
+        return variables[match.group(1)]
+    return VARIABLE.sub(lambda found: str(variables[found.group(1)]), value)
+
+
 def run_case(base, case):
     url = base.rstrip("/") + "/" + case["path"].lstrip("/")
     if case.get("query"):
@@ -56,7 +72,7 @@ def run_case(base, case):
         status = error.code
         raw = error.read().decode("utf-8", "replace")
     except (urllib.error.URLError, TimeoutError, OSError) as error:
-        return {"name": case["name"], "result": "blocked", "reason": str(error)}
+        return {"name": case["name"], "result": "blocked", "reason": str(error)}, None
 
     expect = case.get("expect", {})
     failures = []
@@ -80,24 +96,95 @@ def run_case(base, case):
         elif value != wanted:
             failures.append(f"field {dotted} = {value!r} != {wanted!r}")
     return {"name": case["name"], "result": "failed" if failures else "passed",
-            "status": status, "failures": failures}
+            "status": status, "failures": failures}, parsed
+
+
+def configuration(settings, collection):
+    cases = collection.get("cases")
+    if not isinstance(cases, list) or not cases:
+        raise ValueError("cases must be a nonempty list")
+    projects = {case.get("project", "default") for case in cases}
+    if any(not isinstance(project, str) or not project for project in projects):
+        raise ValueError("each project must have a nonempty ID")
+    if len(projects) > 1:
+        required_flows = collection.get("required_flows")
+        if not isinstance(required_flows, list) or not required_flows:
+            raise ValueError("multi-project cases require required_flows")
+        if len(required_flows) != len(set(required_flows)):
+            raise ValueError("required_flows must be unique")
+        for flow in required_flows:
+            flow_projects = {case.get("project", "default") for case in cases
+                             if case.get("flow") == flow}
+            if not isinstance(flow, str) or not flow or len(flow_projects) < 2:
+                raise ValueError(f"cross-project flow missing steps: {flow}")
+    ids = json.loads(settings.get("APIFOX_PROJECT_IDS_JSON") or "{}")
+    bases = json.loads(settings.get("API_BASE_URLS_JSON") or "{}")
+    if projects == {"default"}:
+        ids.setdefault("default", settings.get("APIFOX_PROJECT_ID", ""))
+        bases.setdefault("default", settings.get("API_BASE_URL", ""))
+    receipts = collection.get("apifox_uploads") or {}
+    for project in projects:
+        receipt = receipts.get(project) or {}
+        if (not ids.get(project) or not bases.get(project)
+                or receipt.get("project_id") != ids[project]
+                or receipt.get("verified") is not True
+                or not receipt.get("evidence")):
+            raise ValueError(f"Apifox upload or test environment unverified for {project}")
+        if not bases[project].startswith(("http://", "https://")):
+            raise ValueError(f"invalid test environment for {project}")
+    return cases, bases
 
 
 def main() -> int:
     if len(sys.argv) != 2:
         print("usage: run_cases.py <cases.json>", file=sys.stderr)
         return 2
-    base = load_env().get("API_BASE_URL", "").strip()
-    if not base:
-        print(json.dumps({"status": "configuration_missing", "field": "API_BASE_URL"}))
+    try:
+        collection = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+        cases, bases = configuration(load_env(), collection)
+    except (OSError, ValueError, TypeError, KeyError) as error:
+        print(json.dumps({"status": "configuration_invalid", "reason": str(error)}))
         return 2
-    cases = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))["cases"]
-    results = [run_case(base, case) for case in cases]
+    variables = {}
+    results = []
+    for case in cases:
+        project = case.get("project", "default")
+        try:
+            resolved = substitute(case, variables)
+            result, parsed = run_case(bases[project], resolved)
+            if result["result"] == "passed":
+                for name, dotted in case.get("capture", {}).items():
+                    value, found = dig(parsed, dotted)
+                    if not found:
+                        result["result"] = "failed"
+                        result.setdefault("failures", []).append(f"capture field {dotted} missing")
+                    else:
+                        variables[name] = value
+        except (KeyError, TypeError, ValueError) as error:
+            result = {"name": case.get("name", "unnamed"), "result": "blocked",
+                      "reason": f"unresolved input: {error}"}
+        result["project"] = project
+        if "flow" in case:
+            result["flow"] = case["flow"]
+        results.append(result)
+    flows = {}
+    for result in results:
+        if "flow" in result:
+            flows.setdefault(result["flow"], []).append(result)
+    flow_summary = {name: {"result": "blocked" if any(
+        step["result"] == "blocked" for step in steps) else "failed" if any(
+        step["result"] == "failed" for step in steps) else "passed",
+        "projects": sorted({step["project"] for step in steps}),
+        "steps": len(steps)} for name, steps in flows.items()}
+    required_flows = collection.get("required_flows") or []
     summary = {"total": len(results),
                "passed": sum(r["result"] == "passed" for r in results),
                "failed": sum(r["result"] == "failed" for r in results),
                "blocked": sum(r["result"] == "blocked" for r in results),
-               "results": results}
+               "results": results, "flows": flow_summary,
+               "required_flows": len(required_flows),
+               "passed_flows": sum(flow_summary[name]["result"] == "passed"
+                                   for name in required_flows)}
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 1 if summary["failed"] or summary["blocked"] else 0
 
