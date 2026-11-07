@@ -13,6 +13,9 @@
 
 # 版本研发入口
 
+- “初始化 .ai / 初始化项目”等指令先读取 `.ai/workflows/00-项目初始化.md` 和 01；先扫描目标仓库架构并填全适用配置，前端或客户端项目还要形成 `project-knowledge/<项目ID>/ui-guidelines.md`。不可读或无法证明属于项目的 `.ai` 同级目录直接跳过；只向用户询问目标项目中无法核实的必填信息。
+- “根据 TAPD 需求生成原型/UI”等指令依次读取 `.ai/agents/原型Agent.md`、`.ai/agents/ArdotUIAgent.md`、`.ai/workflows/08-原型与ArdotUI.md` 和 `.ai/skills/ardot-ui-delivery/SKILL.md`。先核实 TAPD 记录和 UI 生成台账；原型先于 UI，图片入 Ardot 回读后才发企业微信通知。
+
 - “生成 <版本> 版本需求”等口语指令读取 `.ai/agents/研发Agent.md`、`.ai/skills/tapd-requirement-intake/SKILL.md` 与工作流 02/03，按版本完成需求池、评分评审、TAPD 入库回读和企业微信创建通知。
 - “开始 <版本> 代码编写”等口语指令读取 `.ai/agents/研发Agent.md`、`.ai/skills/tapd-version-delivery/SKILL.md` 与工作流 04/05/06。从 TAPD 整理清单，按 P0→P3 及依赖逐项独立分支执行；当前项开始通知、代码审查、自测、合并核对和完成通知结束后才能开始下一项。
 - “进行 <模块> 的全量测试”“测试 <模块> 接口”等口语指令读取 `.ai/workflows/07-模块自动化测试.md` 做路由；后端 HTTP 接口模块走 `.ai/skills/api-regression-testing/SKILL.md`，完成接口识别、Apifox 上传回读、可执行用例编写运行、报告落盘和企业微信通知闭环。Apifox 凭证配置于 `.ai/skills/api-regression-testing/.env`（参照同目录 `.env.example`），缺失时按 skill 内降级路径执行。

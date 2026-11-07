@@ -76,6 +76,14 @@ project:
     # 模块地图最近人工核实日期；未核实用 null
     last_verified: null
 
+  # 前端或客户端项目必须填写；纯后端写“不适用”并说明理由
+  ui:
+    guidelines: "待确认"
+    design_source: "待确认"
+    ardot_project_id: "待确认"
+    ardot_mcp_connection: "待确认：填写已连接的 MCP 名称或连接配置位置，不填凭证"
+    ardot_mcp_documentation: "https://docs.ardot.tencent.com/ardot-mcp/introduction.html"
+
   # 已核实可用的 WorkBuddy Skill 名称，空列表表示尚未确认
   skills:
     # 只有核实 WorkBuddy 已安装的 Skill 后才能填写准确名称。

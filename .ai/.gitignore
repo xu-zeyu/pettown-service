@@ -8,3 +8,4 @@ runs/**/local-logs/
 **/*secret*
 **/*credential*
 **/.DS_Store
+runs/ui/**/.ledger.lock

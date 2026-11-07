@@ -80,6 +80,13 @@ project:
     # 模块地图最近人工核实日期；未核实用 null
     last_verified: "2026-11-05"
 
+  ui:
+    guidelines: "不适用：当前仓库为后端服务，没有前端界面源码"
+    design_source: "不适用：当前仓库为后端服务"
+    ardot_project_id: "待确认：执行 UI 任务时从 Ardot 登录项目核实"
+    ardot_mcp_connection: "待确认：当前环境尚未发现 Ardot MCP"
+    ardot_mcp_documentation: "https://docs.ardot.tencent.com/ardot-mcp/introduction.html"
+
   # 已核实可用的 WorkBuddy Skill 名称，空列表表示尚未确认
   skills:
     # 代码分析 Skill
