@@ -1,0 +1,4523 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "默认模块",
+    "description": "",
+    "version": "1.0.0"
+  },
+  "tags": [
+    {
+      "name": "角色管理"
+    },
+    {
+      "name": "管理员管理"
+    },
+    {
+      "name": "管理后台认证"
+    },
+    {
+      "name": "C 端用户管理"
+    },
+    {
+      "name": "管理员角色管理"
+    },
+    {
+      "name": "管理员权限目录"
+    },
+    {
+      "name": "管理员账号管理"
+    },
+    {
+      "name": "权限点目录"
+    },
+    {
+      "name": "管理后台当前用户"
+    },
+    {
+      "name": "管理后台权限点"
+    },
+    {
+      "name": "管理端图形验证码"
+    }
+  ],
+  "paths": {
+    "/mng/system/roles/{id}": {
+      "get": {
+        "summary": "获取管理员角色详情",
+        "deprecated": false,
+        "description": "需要 system:role:read",
+        "operationId": "get",
+        "tags": [
+          "角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultRoleResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "修改管理员角色",
+        "deprecated": false,
+        "description": "需要 system:role:update；修改名称和启用状态，角色禁用后权限立即对后续请求失效",
+        "operationId": "update",
+        "tags": [
+          "角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除管理员角色",
+        "deprecated": false,
+        "description": "需要 system:role:delete；清空关联账号的 roleId 并保留账号，逻辑删除角色并清理角色权限，后续请求立即失去该角色权限",
+        "operationId": "delete",
+        "tags": [
+          "角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/system/roles/{id}/permissions": {
+      "get": {
+        "summary": "查询角色权限",
+        "deprecated": false,
+        "description": "需要 system:role:read；返回绑定的权限编码数组",
+        "operationId": "permissions",
+        "tags": [
+          "角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultListString"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "分配角色权限",
+        "deprecated": false,
+        "description": "需要 system:role:assign-permission；整体替换，空数组清空，拒绝未知权限及超出自身范围的授权",
+        "operationId": "assignPermissions",
+        "tags": [
+          "角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RolePermissionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/system/roles": {
+      "get": {
+        "summary": "分页查询管理员角色",
+        "deprecated": false,
+        "description": "需要 system:role:read；按编码或名称模糊查询，size=-1 查询全部",
+        "operationId": "list_3",
+        "tags": [
+          "角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "按账号/显示名或角色编码/名称模糊查询，最多 50 个字符",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "按账号/显示名或角色编码/名称模糊查询，最多 50 个字符",
+              "maxLength": 50,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "enabled",
+            "in": "query",
+            "description": "是否启用；不传时查询全部状态",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "是否启用；不传时查询全部状态"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPageResultRoleResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/system/accounts/{id}": {
+      "get": {
+        "summary": "获取管理员详情",
+        "deprecated": false,
+        "description": "需要 system:account:read；响应不包含密码哈希和会话版本",
+        "operationId": "get_1",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultAccountResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "修改管理员资料",
+        "deprecated": false,
+        "description": "需要 system:account:update；修改显示名及可选手机号，手机号变更使旧会话失效；不能修改自身、超级管理员或权限超出自身范围的账号",
+        "operationId": "update_1",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "软删除管理员",
+        "deprecated": false,
+        "description": "需要 system:account:delete；软删除账号并注销其全部会话，保留角色及角色权限；不能删除自身、超级管理员或权限超出自身范围的账号",
+        "operationId": "delete_1",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/system/accounts/{id}/status": {
+      "put": {
+        "summary": "启用或禁用管理员",
+        "deprecated": false,
+        "description": "需要 system:account:status；更新状态使全部旧会话失效，重新启用也不会恢复旧 Token",
+        "operationId": "status",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/system/accounts/{id}/roles": {
+      "get": {
+        "summary": "查询管理员角色绑定（兼容接口）",
+        "deprecated": true,
+        "description": "需要 system:account:read；返回空数组或单项角色 ID 数组，包含已禁用角色；新客户端使用 /{id}/role",
+        "operationId": "roles",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultListLong"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "分配管理员角色（兼容接口）",
+        "deprecated": true,
+        "description": "需要 system:account:assign-role；最多一项，空数组解除关联，多个角色会被拒绝；不能越权授权，新客户端使用 /{id}/role",
+        "operationId": "assignRoles",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountRolesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/system/accounts/{id}/role": {
+      "get": {
+        "summary": "查询管理员关联角色",
+        "deprecated": false,
+        "description": "需要 system:account:read；返回账号的 roleId，未关联时为 null，包含已禁用角色",
+        "operationId": "role",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultLong"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "设置管理员关联角色",
+        "deprecated": false,
+        "description": "需要 system:account:assign-role；一个账号最多一个角色，roleId 为 null 或不传时解除关联，后续请求立即生效；不能修改自身、超级管理员或越权授权",
+        "operationId": "assignRole",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/system/accounts/{id}/password": {
+      "put": {
+        "summary": "重置管理员密码",
+        "deprecated": false,
+        "description": "需要 system:account:reset-password；使全部旧会话失效，下次登录必须修改密码",
+        "operationId": "resetPassword",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/system/accounts/{id}": {
+      "put": {
+        "summary": "编辑管理员账号",
+        "deprecated": false,
+        "description": "修改显示名/手机号需 system:account:update，分配角色需 system:account:assign-role；不能修改自己、超级管理员或越权账号（含禁止修改自身角色）；roleId 不传表示不改角色",
+        "operationId": "update_3",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1UpdateAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultAccountResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "软删除管理员账号",
+        "deprecated": false,
+        "description": "需要 system:account:delete；不能删除自己或超级管理员；删除后目标账号不可登录，角色和权限保留",
+        "operationId": "delete_3",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/system/accounts/{id}/status": {
+      "put": {
+        "summary": "启用或停用管理员账号",
+        "deprecated": false,
+        "description": "需要 system:account:status；不能操作自己或超级管理员；停用后目标账号全部旧会话失效",
+        "operationId": "status_2",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/system/accounts": {
+      "get": {
+        "summary": "分页查询管理员",
+        "deprecated": false,
+        "description": "需要 system:account:read；按账号或显示名模糊查询，size=-1 查询全部",
+        "operationId": "list",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "按账号/显示名或角色编码/名称模糊查询，最多 50 个字符",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "按账号/显示名或角色编码/名称模糊查询，最多 50 个字符",
+              "maxLength": 50,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "enabled",
+            "in": "query",
+            "description": "是否启用；不传时查询全部状态",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "是否启用；不传时查询全部状态"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPageResultAccountResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建管理员",
+        "deprecated": false,
+        "description": "需要 system:account:create；默认启用、无角色，首次登录须修改密码",
+        "operationId": "create",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultAccountResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/system/accounts": {
+      "get": {
+        "summary": "分页查询管理员账号",
+        "deprecated": false,
+        "description": "需要 system:account:read；账号和显示名分别模糊匹配，状态及角色 ID 精确筛选，按 ID 升序",
+        "operationId": "list_2",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "description": "账号模糊查询，最多 50 个字符",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "账号模糊查询，最多 50 个字符",
+              "maxLength": 50,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "displayName",
+            "in": "query",
+            "description": "显示名模糊查询，最多 50 个字符",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "显示名模糊查询，最多 50 个字符",
+              "maxLength": 50,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "enabled",
+            "in": "query",
+            "description": "账号启用状态；不传时查询全部",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "账号启用状态；不传时查询全部"
+            }
+          },
+          {
+            "name": "roleId",
+            "in": "query",
+            "description": "当前关联角色 ID 精确匹配；不传时不限角色",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "description": "当前关联角色 ID 精确匹配；不传时不限角色",
+              "exclusiveMinimum": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPageResultAccountResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建管理员账号",
+        "deprecated": false,
+        "description": "需要 system:account:create；初始密码满足强度规则，首次登录必须改密，角色权限不得超出操作者；重复用户名返回业务码 4091",
+        "operationId": "create_5",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1CreateAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultAccountResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/system/accounts/{id}/reset-password": {
+      "post": {
+        "summary": "重置管理员密码",
+        "deprecated": false,
+        "description": "需要 system:account:reset-password；重置后该账号旧会话失效，下次登录须先改密",
+        "operationId": "resetPassword_1",
+        "tags": [
+          "管理员管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1ResetPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/auth/password": {
+      "put": {
+        "summary": "修改当前管理员密码",
+        "deprecated": false,
+        "description": "校验原密码后更新密码，使该账号全部旧会话失效，成功后须重新登录",
+        "operationId": "changePassword",
+        "tags": [
+          "管理后台认证"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/auth/verification": {
+      "post": {
+        "summary": "按手机号生成并缓存六位验证码",
+        "deprecated": false,
+        "description": "公开接口；有效期 5 分钟，按用途和手机号隔离存储，只接受 ADMIN_LOGIN 管理员登录用途；暂不发送短信，不返回验证码",
+        "operationId": "generate",
+        "tags": [
+          "管理后台认证"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/auth/logout": {
+      "post": {
+        "summary": "管理员退出登录",
+        "deprecated": false,
+        "description": "只注销当前 Token，其他终端会话保持有效",
+        "operationId": "logout",
+        "tags": [
+          "管理后台认证"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/auth/login": {
+      "post": {
+        "summary": "管理员密码和短信验证码登录",
+        "deprecated": false,
+        "description": "公开接口；username、password、smsCode 三项校验成功后返回管理员 Token 及账号信息。初始账号或被重置密码的账号须先修改密码",
+        "operationId": "login",
+        "tags": [
+          "管理后台认证"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultLoginResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/auth/menus": {
+      "get": {
+        "summary": "获取当前管理员菜单",
+        "deprecated": false,
+        "description": "按当前有效读权限生成导航树，菜单不替代接口鉴权；初始密码未修改时拒绝访问",
+        "operationId": "menus",
+        "tags": [
+          "管理后台认证"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultListMenuResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/auth/me": {
+      "get": {
+        "summary": "获取当前管理员信息",
+        "deprecated": false,
+        "description": "返回账号信息、已启用角色和有效权限；passwordChangeRequired 为 true 时须先改密",
+        "operationId": "me",
+        "tags": [
+          "管理后台认证"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultMeResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/users/{id}/status": {
+      "put": {
+        "summary": "封禁或解封 C 端用户",
+        "deprecated": false,
+        "description": "需要 biz:user:status；封禁后小程序旧 Token 失效且登录被拒；解封需重新登录",
+        "operationId": "status_1",
+        "tags": [
+          "C 端用户管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "summary": "分页查询 C 端用户",
+        "deprecated": false,
+        "description": "需要 biz:user:read；手机号模糊匹配，注册来源精确匹配；按注册时间、ID 倒序",
+        "operationId": "list_7",
+        "tags": [
+          "C 端用户管理"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "phone",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "IOS",
+                "ANDROID",
+                "HARMONY_OS",
+                "MINI_PROGRAM",
+                "WEB",
+                "UNKNOWN"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPageResultAdminUserResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/users/{id}": {
+      "get": {
+        "summary": "查询 C 端用户详情",
+        "deprecated": false,
+        "description": "需要 biz:user:read；不返回密码散列",
+        "operationId": "get_5",
+        "tags": [
+          "C 端用户管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultAdminUserResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/users/{id}/pets": {
+      "get": {
+        "summary": "查看 C 端用户宠物数据",
+        "deprecated": false,
+        "description": "需要 biz:user:read；返回该用户宠物列表与数量（不含健康记录明细），字段与移动端一致，不返回密码散列等敏感字段",
+        "operationId": "pets",
+        "tags": [
+          "C 端用户管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultAdminUserPetsResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/system/roles/{id}": {
+      "get": {
+        "summary": "查询角色详情",
+        "deprecated": false,
+        "description": "需要 system:role:read；不返回已软删角色",
+        "operationId": "get_2",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultV1RoleResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "编辑角色",
+        "deprecated": false,
+        "description": "需要 system:role:update；更新名称、说明及启用状态，编码不变",
+        "operationId": "update_2",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1UpdateRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "软删除角色",
+        "deprecated": false,
+        "description": "需要 system:role:delete；仍被未软删账号引用时拒绝，并返回引用数量",
+        "operationId": "delete_2",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/system/roles/{id}/permissions": {
+      "get": {
+        "summary": "查询角色权限码集合",
+        "deprecated": false,
+        "description": "需要 system:role:assign-permission；返回该角色当前绑定的权限编码",
+        "operationId": "rolePermissions",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultListString"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "同步角色权限码集合",
+        "deprecated": false,
+        "description": "需要 system:role:assign-permission；整体替换、空数组清空；仅接受权限目录内编码（非法编码整体拒绝），且只能授予操作者持有的权限，变更即时生效",
+        "operationId": "replaceRolePermissions",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RolePermissionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/role/update": {
+      "post": {
+        "summary": "更新角色",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN；只更新非 null 的 rname、description，不允许修改超出自身权限范围的角色",
+        "operationId": "update_4",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRoleUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/role/delete": {
+      "post": {
+        "summary": "删除角色",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN；逻辑删除并清理角色权限及账号绑定，后续请求立即失去该角色的权限",
+        "operationId": "delete_4",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRoleDeleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/role/create": {
+      "post": {
+        "summary": "创建角色",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN；以 rname、description 创建，名称不可与未删除角色重复",
+        "operationId": "create_1",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRoleCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/role/assignPermissions": {
+      "post": {
+        "summary": "为角色分配权限",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN；permissionIds 整体替换，空数组清空、重复 ID 去重；拒绝不存在的权限和越权授权，后续请求立即生效",
+        "operationId": "assign",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRoleAssignPermissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/system/roles": {
+      "get": {
+        "summary": "分页查询角色",
+        "deprecated": false,
+        "description": "需要 system:role:read；按编码或名称模糊筛选，可按启用状态筛选，按 ID 升序",
+        "operationId": "list_1",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "按账号/显示名或角色编码/名称模糊查询，最多 50 个字符",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "按账号/显示名或角色编码/名称模糊查询，最多 50 个字符",
+              "maxLength": 50,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "enabled",
+            "in": "query",
+            "description": "是否启用；不传时查询全部状态",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "是否启用；不传时查询全部状态"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPageResultV1RoleResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建角色",
+        "deprecated": false,
+        "description": "需要 system:role:create；角色编码唯一、创建后不可修改，默认启用",
+        "operationId": "create_4",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1CreateRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultV1RoleResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/role/{id}": {
+      "get": {
+        "summary": "查询角色详情",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN；不返回已删除角色",
+        "operationId": "get_3",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultAdminRoleResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/role/{id}/permissions": {
+      "get": {
+        "summary": "查询角色权限列表",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN；返回权限 ID、name、code",
+        "operationId": "permissions_1",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultListAdminPermissionResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/role/page": {
+      "get": {
+        "summary": "分页查询角色",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN；返回 list、total，size=-1 查询全部",
+        "operationId": "page",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPageResultAdminRoleResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/role/list": {
+      "get": {
+        "summary": "查询所有角色",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN；只返回未删除角色",
+        "operationId": "list_5",
+        "tags": [
+          "管理员角色管理"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultListAdminRoleResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/permission/update": {
+      "post": {
+        "summary": "更新权限",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN；非 null 字段局部更新；内置编码不可修改，自定义编码修改时同步迁移角色绑定",
+        "operationId": "update_5",
+        "tags": [
+          "管理员权限目录"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminPermissionUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/permission/create": {
+      "post": {
+        "summary": "创建权限",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN；编码唯一，不支持通配符",
+        "operationId": "create_2",
+        "tags": [
+          "管理员权限目录"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminPermissionCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/permission/batchSync": {
+      "post": {
+        "summary": "批量同步权限",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN；仅补充不存在的编码，已有名称保持不变，不删除已有权限；相同编码只创建一次，全部校验及写入在同一事务完成",
+        "operationId": "sync",
+        "tags": [
+          "管理员权限目录"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminPermissionSyncRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/permission/{id}": {
+      "get": {
+        "summary": "查询权限详情",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN",
+        "operationId": "get_4",
+        "tags": [
+          "管理员权限目录"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultAdminPermissionResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除权限",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN；内置权限不可删除，自定义权限删除时清理角色绑定，后续请求立即失效",
+        "operationId": "delete_5",
+        "tags": [
+          "管理员权限目录"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/permission/page": {
+      "get": {
+        "summary": "分页查询权限",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN；返回 list、total，size=-1 查询全部",
+        "operationId": "page_1",
+        "tags": [
+          "管理员权限目录"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPageResultAdminPermissionResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/permission/list": {
+      "get": {
+        "summary": "查询所有权限",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN",
+        "operationId": "list_6",
+        "tags": [
+          "管理员权限目录"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultListAdminPermissionResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/create": {
+      "post": {
+        "summary": "创建管理员",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN。支持 phone、realName、roleId。密码以 SHA-256 哈希保存，创建的账号无需首次改密。授予的权限必须在操作者自身权限范围内。",
+        "operationId": "create_3",
+        "tags": [
+          "管理员账号管理"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/system/permissions/sync": {
+      "post": {
+        "summary": "同步内置权限码到目录",
+        "deprecated": false,
+        "description": "需要 SUB_ADMIN；将 AdminPermissionCodes 声明的编码幂等补入目录，只新增缺失项、不覆盖名称、不删除旧项，可重复执行",
+        "operationId": "sync_1",
+        "tags": [
+          "权限点目录"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/system/permissions": {
+      "get": {
+        "summary": "查询权限点目录",
+        "deprecated": false,
+        "description": "需要 system:permission:read；返回内置及自定义权限编码与名称，与 AdminPermissionCodes 内置常量对齐",
+        "operationId": "list_8",
+        "tags": [
+          "权限点目录"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultListPermissionResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/auth/login": {
+      "post": {
+        "summary": "管理员登录（图形验证码）",
+        "deprecated": false,
+        "description": "公开接口；username+password+图形验证码，连续 5 次密码失败锁定 30 分钟；返回 token 与 passwordChangeRequired",
+        "operationId": "login_1",
+        "tags": [
+          "管理后台当前用户"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultLoginResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/auth/change-password": {
+      "post": {
+        "summary": "修改本人管理员密码",
+        "deprecated": false,
+        "description": "校验原密码；新密码须为 8–64 位且含字母、数字；成功后全部旧会话失效，须重新登录",
+        "operationId": "changePassword_1",
+        "tags": [
+          "管理后台当前用户"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1ChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/auth/menus": {
+      "get": {
+        "summary": "获取当前管理员菜单",
+        "deprecated": false,
+        "description": "按当前有效读权限生成导航树；初始密码未修改时拒绝访问",
+        "operationId": "menus_1",
+        "tags": [
+          "管理后台当前用户"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultListMenuResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/auth/me": {
+      "get": {
+        "summary": "获取当前管理员信息",
+        "deprecated": false,
+        "description": "返回实时账号、已启用角色和有效权限；初始密码未修改时可访问",
+        "operationId": "me_1",
+        "tags": [
+          "管理后台当前用户"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultMeResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/mng/system/permissions": {
+      "get": {
+        "summary": "查询管理后台权限点",
+        "deprecated": false,
+        "description": "需要 system:permission:read；返回数据库目录中的内置及自定义权限编码与名称；目录维护接口需要 SUB_ADMIN",
+        "operationId": "list_4",
+        "tags": [
+          "管理后台权限点"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultListPermissionResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/verification/captcha": {
+      "get": {
+        "summary": "获取登录图形验证码",
+        "deprecated": false,
+        "description": "公开接口；返回验证码 ID 与 Base64 PNG 图片，5 分钟有效且一次性；同一 IP 每分钟最多 20 次",
+        "operationId": "captcha",
+        "tags": [
+          "管理端图形验证码"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultCaptchaResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    }
+  },
+  "webhooks": {},
+  "components": {
+    "schemas": {
+      "AccountResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "管理员 ID"
+          },
+          "username": {
+            "type": "string",
+            "description": "管理员账号"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "显示名"
+          },
+          "roleId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "关联角色 ID；一个账号最多关联一个角色，未关联时为 null"
+          },
+          "phone": {
+            "type": "string",
+            "description": "登录验证码手机号；未配置时无法短信登录"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "是否启用"
+          },
+          "superAdmin": {
+            "type": "boolean",
+            "description": "是否为初始超级管理员"
+          },
+          "passwordChangeRequired": {
+            "type": "boolean",
+            "description": "是否必须先修改密码"
+          },
+          "createdTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "创建时间"
+          },
+          "updatedTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "更新时间"
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "tokenType": {
+            "type": "string",
+            "description": "Token 类型，固定为 Bearer"
+          },
+          "token": {
+            "type": "string",
+            "description": "管理员 Token；通过 Authorization 请求头传递，仅登录时返回"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "当前 Token 剩余有效期，单位：秒",
+            "format": "int64"
+          },
+          "account": {
+            "$ref": "#/components/schemas/AccountResponse",
+            "description": "登录账号信息；passwordChangeRequired 为 true 时必须先修改密码"
+          }
+        }
+      },
+      "ResultLoginResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoginResponse",
+            "description": ""
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "管理员账号；兼容旧格式与 4 到 50 位字母数字的新格式",
+            "minLength": 1,
+            "pattern": "(?:[a-z][a-z0-9_]{2,49}|[A-Za-z0-9]{4,50})"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "管理员密码",
+            "maxLength": 72,
+            "minLength": 0,
+            "writeOnly": true
+          },
+          "smsCode": {
+            "type": "string",
+            "description": "管理员登录用途的六位短信验证码",
+            "minLength": 1,
+            "pattern": "[0-9]{6}",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "password",
+          "smsCode",
+          "username"
+        ]
+      },
+      "ResultVoid": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {}
+        }
+      },
+      "RoleResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "角色 ID"
+          },
+          "code": {
+            "type": "string",
+            "description": "唯一角色编码"
+          },
+          "name": {
+            "type": "string",
+            "description": "角色名称"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "是否启用"
+          },
+          "createdTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "创建时间"
+          },
+          "updatedTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "更新时间"
+          }
+        }
+      },
+      "MeResponse": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/AccountResponse",
+            "description": "当前管理员信息"
+          },
+          "roles": {
+            "type": "array",
+            "description": "已启用的关联角色，最多一项；超级管理员权限不依赖角色",
+            "items": {
+              "$ref": "#/components/schemas/RoleResponse"
+            }
+          },
+          "permissions": {
+            "type": "array",
+            "description": "当前关联角色提供的有效权限编码",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ResultMeResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/MeResponse",
+            "description": ""
+          }
+        }
+      },
+      "MenuResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "菜单编码"
+          },
+          "title": {
+            "type": "string",
+            "description": "菜单标题"
+          },
+          "path": {
+            "type": "string",
+            "description": "前端页面路径；目录节点为 null"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MenuResponse",
+              "description": "菜单只是前端导航，接口仍独立校验权限。"
+            },
+            "description": "子菜单；叶子节点为空数组"
+          }
+        }
+      },
+      "ResultListMenuResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MenuResponse"
+            }
+          }
+        }
+      },
+      "ChangePasswordRequest": {
+        "type": "object",
+        "properties": {
+          "oldPassword": {
+            "type": "string",
+            "format": "password",
+            "description": "原密码",
+            "maxLength": 72,
+            "minLength": 0,
+            "writeOnly": true
+          },
+          "newPassword": {
+            "type": "string",
+            "format": "password",
+            "description": "新密码；8 到 72 位非空格 ASCII 字符，不能与原密码相同",
+            "minLength": 1,
+            "pattern": "[\\x21-\\x7E]{8,72}",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "newPassword",
+          "oldPassword"
+        ]
+      },
+      "PermissionResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "权限编码"
+          },
+          "title": {
+            "type": "string",
+            "description": "权限名称"
+          }
+        }
+      },
+      "ResultListPermissionResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionResponse"
+            }
+          }
+        }
+      },
+      "PageResultAccountResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ResultPageResultAccountResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultAccountResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultAccountResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AccountResponse",
+            "description": ""
+          }
+        }
+      },
+      "CreateAccountRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "唯一账号；3 到 50 位小写字母、数字或下划线，以字母开头，创建后不可修改",
+            "minLength": 1,
+            "pattern": "[a-z][a-z0-9_]{2,49}"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "显示名；不能为空，最多 50 个字符",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "初始密码；8 到 72 位非空格 ASCII 字符，首次登录须修改",
+            "minLength": 1,
+            "pattern": "[\\x21-\\x7E]{8,72}",
+            "writeOnly": true
+          },
+          "phone": {
+            "type": "string",
+            "description": "登录验证码手机号；未配置时无法短信登录",
+            "pattern": "1[3-9][0-9]{9}"
+          }
+        },
+        "required": [
+          "displayName",
+          "password",
+          "username"
+        ]
+      },
+      "UpdateAccountRequest": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "description": "显示名；不能为空，最多 50 个字符",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "phone": {
+            "type": "string",
+            "description": "登录验证码手机号；不传时保持原值，修改后该账号全部旧会话失效",
+            "pattern": "1[3-9][0-9]{9}"
+          }
+        },
+        "required": [
+          "displayName"
+        ]
+      },
+      "StatusRequest": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "是否启用；修改状态会使该账号全部旧会话失效"
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "ResultListLong": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        }
+      },
+      "AccountRolesRequest": {
+        "type": "object",
+        "properties": {
+          "roleIds": {
+            "type": "array",
+            "description": "兼容旧接口的角色 ID 数组；最多一项，空数组解除关联，多个角色会被拒绝",
+            "items": {
+              "type": "integer",
+              "format": "int64",
+              "exclusiveMinimum": 0,
+              "minimum": 0
+            },
+            "maxItems": 1,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "roleIds"
+        ]
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "重置后的密码；8 到 72 位非空格 ASCII 字符，下次登录须修改",
+            "minLength": 1,
+            "pattern": "[\\x21-\\x7E]{8,72}",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "password"
+        ]
+      },
+      "PageResultRoleResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ResultPageResultRoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultRoleResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultRoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/RoleResponse",
+            "description": ""
+          }
+        }
+      },
+      "CreateRoleRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "唯一角色编码；3 到 50 位小写字母、数字或下划线，以字母开头，创建后不可修改",
+            "pattern": "[a-z][a-z0-9_]{2,49}"
+          },
+          "name": {
+            "type": "string",
+            "description": "角色名称；不能为空，最多 50 个字符",
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
+      "UpdateRoleRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "角色名称；不能为空，最多 50 个字符",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "是否启用；禁用后不再提供角色权限"
+          }
+        },
+        "required": [
+          "enabled",
+          "name"
+        ]
+      },
+      "ResultListString": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": ""
+          }
+        }
+      },
+      "RolePermissionsRequest": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "description": "权限编码列表；整体替换，空数组清空；仅支持权限目录中的编码，不支持通配符",
+            "items": {
+              "type": "string",
+              "maxLength": 80,
+              "minLength": 0
+            },
+            "maxItems": 1000,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "permissions"
+        ]
+      },
+      "ResultLong": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          }
+        }
+      },
+      "AccountRoleRequest": {
+        "type": "object",
+        "properties": {
+          "roleId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "角色 ID；一个账号最多关联一个角色，null 或不传时解除关联",
+            "exclusiveMinimum": 0,
+            "minimum": 0
+          }
+        }
+      },
+      "VerificationCodeRequest": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^1[3-9]\\d{9}$"
+          },
+          "type": {
+            "type": "string",
+            "description": "验证码用途；管理后台只接受 ADMIN_LOGIN 管理员登录",
+            "enum": [
+              "ADMIN_LOGIN"
+            ]
+          }
+        },
+        "required": [
+          "phone",
+          "type"
+        ]
+      },
+      "ResultString": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "string",
+            "description": ""
+          }
+        }
+      },
+      "AdminSmsLoginRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "",
+            "maxLength": 50
+          },
+          "password": {
+            "type": "string",
+            "description": "管理员密码",
+            "maxLength": 72
+          },
+          "smsCode": {
+            "type": "string",
+            "description": "管理员登录用途的六位短信验证码",
+            "pattern": "[0-9]{6}"
+          }
+        },
+        "required": [
+          "username",
+          "password",
+          "smsCode"
+        ]
+      },
+      "AdminSelfResponse": {
+        "type": "object",
+        "properties": {
+          "avatar": {
+            "type": "string",
+            "description": ""
+          },
+          "userName": {
+            "type": "string",
+            "description": ""
+          },
+          "authorities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "当前有效权限编码；前端据此控制菜单及按钮，接口仍独立鉴权"
+          }
+        }
+      },
+      "ResultAdminSelfResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminSelfResponse",
+            "description": ""
+          }
+        }
+      },
+      "AdminRoleResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "rname": {
+            "type": "string",
+            "description": "角色名称"
+          },
+          "description": {
+            "type": "string"
+          },
+          "updatedTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deleted": {
+            "type": "integer",
+            "format": "int32",
+            "description": "0 为正常，1 为已删除；列表只返回正常角色"
+          }
+        }
+      },
+      "AdminInfoResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          },
+          "username": {
+            "type": "string",
+            "description": ""
+          },
+          "realName": {
+            "type": "string",
+            "description": ""
+          },
+          "phone": {
+            "type": "string",
+            "description": ""
+          },
+          "avatar": {
+            "type": "string",
+            "description": ""
+          },
+          "createdTime": {
+            "type": "string",
+            "description": ""
+          },
+          "lastLoginTime": {
+            "type": "string",
+            "description": ""
+          },
+          "updatedTime": {
+            "type": "string",
+            "description": ""
+          },
+          "role": {
+            "$ref": "#/components/schemas/AdminRoleResponse",
+            "description": "账号关联的已启用角色；未关联、已禁用或已删除时为 null"
+          }
+        }
+      },
+      "ResultAdminInfoResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminInfoResponse",
+            "description": ""
+          }
+        }
+      },
+      "AdminPermissionCreateRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
+      "AdminPermissionUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "",
+            "minimum": 1,
+            "format": "int64"
+          },
+          "name": {
+            "type": "string",
+            "description": "",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "code": {
+            "type": "string",
+            "description": "",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "AdminPermissionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "权限 ID",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string",
+            "description": "权限名称"
+          },
+          "code": {
+            "type": "string",
+            "description": "权限编码"
+          }
+        }
+      },
+      "ResultAdminPermissionResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminPermissionResponse",
+            "description": ""
+          }
+        }
+      },
+      "PageResultAdminPermissionResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPermissionResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ResultPageResultAdminPermissionResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultAdminPermissionResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultListAdminPermissionResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPermissionResponse"
+            }
+          }
+        }
+      },
+      "AdminPermissionSyncRequest": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "description": "权限目录；仅新增不存在的编码，已有编码保持原名称，不删除权限",
+            "items": {
+              "$ref": "#/components/schemas/AdminPermissionCreateRequest"
+            },
+            "maxItems": 1000,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "permissions"
+        ]
+      },
+      "AdminRoleCreateRequest": {
+        "type": "object",
+        "properties": {
+          "rname": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "rname"
+        ]
+      },
+      "AdminRoleUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "exclusiveMinimum": 0,
+            "minimum": 0
+          },
+          "rname": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "AdminRoleDeleteRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "",
+            "minimum": 1,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ResultAdminRoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminRoleResponse",
+            "description": ""
+          }
+        }
+      },
+      "PageResultAdminRoleResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminRoleResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ResultPageResultAdminRoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultAdminRoleResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultListAdminRoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminRoleResponse"
+            }
+          }
+        }
+      },
+      "AdminRoleAssignPermissionRequest": {
+        "type": "object",
+        "properties": {
+          "roleId": {
+            "type": "integer",
+            "format": "int64",
+            "exclusiveMinimum": 0,
+            "minimum": 0
+          },
+          "permissionIds": {
+            "type": "array",
+            "description": "权限 ID 列表；整体替换，空数组清空，重复 ID 去重",
+            "items": {
+              "type": "integer",
+              "format": "int64",
+              "exclusiveMinimum": 0,
+              "minimum": 0
+            },
+            "maxItems": 1000,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "permissionIds",
+          "roleId"
+        ]
+      },
+      "AdminCreateRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "[a-z][a-z0-9_]{2,49}"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "8 到 72 位非空格 ASCII 字符",
+            "minLength": 1,
+            "pattern": "[\\x21-\\x7E]{8,72}",
+            "writeOnly": true
+          },
+          "phone": {
+            "type": "string",
+            "description": "登录验证码使用的手机号",
+            "pattern": "1[3-9][0-9]{9}"
+          },
+          "realName": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "roleId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "初始角色 ID；不传时不分配角色",
+            "exclusiveMinimum": 0,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "password",
+          "username"
+        ]
+      },
+      "V1ChangePasswordRequest": {
+        "type": "object",
+        "properties": {
+          "oldPassword": {
+            "type": "string",
+            "format": "password",
+            "description": "原密码",
+            "minLength": 1,
+            "writeOnly": true
+          },
+          "newPassword": {
+            "type": "string",
+            "format": "password",
+            "description": "新密码：8 到 64 位非空格 ASCII，至少包含字母和数字，且不能与原密码相同",
+            "minLength": 1,
+            "pattern": "(?=.*[A-Za-z])(?=.*[0-9])[\\x21-\\x7E]{8,64}",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "newPassword",
+          "oldPassword"
+        ]
+      },
+      "AdminUserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "IOS",
+              "ANDROID",
+              "HARMONY_OS",
+              "MINI_PROGRAM",
+              "WEB",
+              "UNKNOWN"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "BANNED"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PageResultAdminUserResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUserResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ResultPageResultAdminUserResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultAdminUserResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultAdminUserResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminUserResponse",
+            "description": ""
+          }
+        }
+      },
+      "UserStatusRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "ACTIVE 正常；BANNED 永久封禁直到管理员手动解封",
+            "enum": [
+              "ACTIVE",
+              "BANNED"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "V1CreateAccountRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "唯一用户名：4 到 50 位 ASCII 字母或数字",
+            "minLength": 1,
+            "pattern": "[A-Za-z0-9]{4,50}"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "显示名：非空且最多 50 个字符",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "初始密码：8 到 72 位非空格 ASCII，须同时包含字母、数字、符号",
+            "maxLength": 72,
+            "minLength": 8,
+            "writeOnly": true
+          },
+          "phone": {
+            "type": "string",
+            "description": "登录验证码手机号；不传时无法短信登录",
+            "pattern": "1[3-9][0-9]{9}"
+          },
+          "roleId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "初始角色 ID；不传时不分配角色",
+            "exclusiveMinimum": 0,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "displayName",
+          "password",
+          "username"
+        ]
+      },
+      "V1ResetPasswordRequest": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "新密码：8 到 64 位非空格 ASCII，至少包含字母和数字；下次登录须修改",
+            "minLength": 1,
+            "pattern": "(?=.*[A-Za-z])(?=.*[0-9])[\\x21-\\x7E]{8,64}",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "password"
+        ]
+      },
+      "V1RoleResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "角色 ID"
+          },
+          "code": {
+            "type": "string",
+            "description": "唯一角色编码，创建后不可修改"
+          },
+          "name": {
+            "type": "string",
+            "description": "角色名称"
+          },
+          "description": {
+            "type": "string",
+            "description": "角色说明"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "是否启用"
+          },
+          "createdTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "创建时间"
+          },
+          "updatedTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "更新时间"
+          }
+        }
+      },
+      "PageResultV1RoleResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/V1RoleResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ResultPageResultV1RoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultV1RoleResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultV1RoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/V1RoleResponse",
+            "description": ""
+          }
+        }
+      },
+      "V1CreateRoleRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "唯一角色编码，3 到 50 位小写字母、数字或下划线，以字母开头；创建后不可修改",
+            "minLength": 1,
+            "pattern": "[a-z][a-z0-9_]{2,49}"
+          },
+          "name": {
+            "type": "string",
+            "description": "角色名称，最多 50 个字符",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "description": {
+            "type": "string",
+            "description": "角色说明，最多 500 个字符",
+            "maxLength": 500,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
+      "V1UpdateRoleRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "角色名称，最多 50 个字符",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "description": {
+            "type": "string",
+            "description": "角色说明；null 清空",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "是否启用；禁用后角色权限对后续请求立即失效"
+          }
+        },
+        "required": [
+          "enabled",
+          "name"
+        ]
+      },
+      "V1UpdateAccountRequest": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "description": "显示名；不传或 null 表示不修改",
+            "maxLength": 50,
+            "minLength": 1
+          },
+          "phone": {
+            "type": "string",
+            "description": "手机号；不传或 null 表示不修改，变更会使目标账号旧会话失效",
+            "pattern": "1[3-9][0-9]{9}"
+          },
+          "roleId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "关联角色 ID；不传或 null 表示不修改，分配需 system:account:assign-role"
+          }
+        }
+      },
+      "V1LoginRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "管理员账号",
+            "minLength": 1,
+            "pattern": "(?:[a-z][a-z0-9_]{2,49}|[A-Za-z0-9]{4,50})"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "管理员密码",
+            "maxLength": 72,
+            "minLength": 0,
+            "writeOnly": true
+          },
+          "captchaId": {
+            "type": "string",
+            "description": "图形验证码 ID",
+            "minLength": 1,
+            "writeOnly": true
+          },
+          "captchaCode": {
+            "type": "string",
+            "description": "图形验证码内容",
+            "maxLength": 8,
+            "minLength": 0,
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "captchaCode",
+          "captchaId",
+          "password",
+          "username"
+        ]
+      },
+      "CaptchaResponse": {
+        "type": "object",
+        "properties": {
+          "captchaId": {
+            "type": "string"
+          },
+          "imageBase64": {
+            "type": "string"
+          }
+        }
+      },
+      "ResultCaptchaResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CaptchaResponse"
+          }
+        }
+      },
+      "AdminUserPetsResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "petCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PetItem"
+            }
+          }
+        }
+      },
+      "PetItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "species": {
+            "type": "string"
+          },
+          "breed": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "weightKg": {
+            "type": "number"
+          },
+          "sterilized": {
+            "type": "boolean"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "createdTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ResultAdminUserPetsResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminUserPetsResponse"
+          }
+        }
+      }
+    },
+    "responses": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "管理员登录后返回的 Token，请通过 Authorization: Bearer <token> 请求头传递",
+        "scheme": "bearer"
+      },
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "servers": [],
+  "security": [
+    {
+      "bearer": []
+    }
+  ]
+}

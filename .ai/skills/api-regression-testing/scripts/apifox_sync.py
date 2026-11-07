@@ -8,7 +8,9 @@ when a fresh export proves every expected method/path is present.
 import argparse
 import hashlib
 import json
+import subprocess
 import sys
+import tempfile
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -20,6 +22,55 @@ HTTP_METHODS = {"get", "post", "put", "patch", "delete", "head", "options", "tra
 
 class SyncError(Exception):
     pass
+
+
+class CurlResponse:
+    def __init__(self, status, content_type, body):
+        self.status = status
+        self.headers = {"Content-Type": content_type}
+        self.body = body
+
+    def read(self):
+        return self.body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_unused):
+        return False
+
+
+def curl_urlopen(request, timeout):
+    """Use curl because the Apifox gateway gives urllib an empty HTML 201 here.
+
+    Headers live in a mode-0600 temporary file rather than process arguments.
+    The caller makes exactly one request; failed writes are never retried.
+    """
+    with tempfile.TemporaryDirectory(prefix="apifox-http-") as directory:
+        root = Path(directory)
+        headers_file = root / "headers"
+        body_file = root / "request.json"
+        response_file = root / "response"
+        headers = request.header_items()
+        if any("\r" in value or "\n" in value for _, value in headers):
+            raise SyncError("请求头包含非法换行")
+        headers_file.write_text("".join(f"{key}: {value}\n" for key, value in headers))
+        headers_file.chmod(0o600)
+        body_file.write_bytes(request.data or b"")
+        command = ["curl", "--silent", "--show-error", "--max-time", str(timeout),
+                   "--request", request.get_method(), "--header", "@" + str(headers_file),
+                   "--data-binary", "@" + str(body_file), "--output", str(response_file),
+                   "--write-out", "%{http_code}\n%{content_type}", request.full_url]
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, timeout=timeout + 5)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise SyncError("Apifox curl 传输失败") from error
+        if result.returncode != 0:
+            raise SyncError(f"Apifox curl 传输失败，退出码 {result.returncode}")
+        lines = result.stdout.splitlines()
+        if len(lines) != 2 or not lines[0].isdigit():
+            raise SyncError("Apifox curl 响应元数据无效")
+        return CurlResponse(int(lines[0]), lines[1], response_file.read_bytes())
 
 
 def load_env(path=ENV_FILE):
@@ -59,7 +110,7 @@ def response_meta(status, headers, raw):
             "body_bytes": len(raw)}
 
 
-def call_api(project_id, action, token, payload, opener=urllib.request.urlopen):
+def call_api(project_id, action, token, payload, opener=curl_urlopen):
     request = urllib.request.Request(
         f"{API_ORIGIN}/{project_id}/{action}",
         data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
@@ -98,7 +149,7 @@ def export_document(project_id, token, out, label, opener):
     return document
 
 
-def sync(target_key, spec_path, out, folder_id=None, opener=urllib.request.urlopen, env_path=ENV_FILE):
+def sync(target_key, spec_path, out, folder_id=None, opener=curl_urlopen, env_path=ENV_FILE):
     settings = load_env(env_path)
     if folder_id is None:
         folder_id = settings.get("APIFOX_TARGET_FOLDER_ID") or None

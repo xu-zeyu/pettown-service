@@ -1,0 +1,5 @@
+【API 测试阶段结果】pet-system miniapp / admin
+Apifox 接口已导入并回读：miniapp 16/16，admin 64/64。
+隔离环境 API 集成测试：miniapp 79/79，admin 72/72 通过。
+真实 HTTP 与跨服务链路尚未执行；禅道受信任通道未就绪。本次没有经证实的可入库 Bug，未达到商用验收门禁。
+报告：.ai/runs/api-test/2026-11-07-miniapp-admin-skill-fix/测试报告.md

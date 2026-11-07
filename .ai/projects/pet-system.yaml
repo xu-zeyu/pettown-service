@@ -32,11 +32,16 @@ project:
     # 新需求默认负责人；入库前仍须在当前 TAPD 项目空间核对成员
     default_owner: "徐泽宇"
 
-  # 用户说明使用禅道开源版 22.7；产品 ID 仍待核实，不能用 TAPD/Apifox/禅道项目 ID 代替
+  # 用户说明使用禅道开源版 22.7；项目与产品 ID 已通过目标实例官方 API V2 分别核实
   zentao:
     edition: "open-source"
     version: "22.7"
-    product_id: null
+    instance_url: "http://8.163.103.108:88/zentao"
+    api_version: "v2"
+    project_id: 1 # 2026-11-07 经目标实例官方 API V2 项目列表回读核实
+    project_url: "http://8.163.103.108:88/zentao/project-index-1.html"
+    product_name: "尾巴町"
+    product_id: 1 # 2026-11-07 经官方 API V2 产品列表及详情独立回读核实
 
   # 经核实的产品背景
   product:

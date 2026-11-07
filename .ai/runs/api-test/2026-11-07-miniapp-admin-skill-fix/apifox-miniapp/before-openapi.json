@@ -1,0 +1,1114 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "默认模块",
+    "description": "",
+    "version": "1.0.0"
+  },
+  "tags": [],
+  "paths": {},
+  "webhooks": {},
+  "components": {
+    "schemas": {
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": ""
+          },
+          "phone": {
+            "type": "string",
+            "description": ""
+          },
+          "token": {
+            "type": "string",
+            "description": ""
+          }
+        }
+      },
+      "AccountResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          },
+          "username": {
+            "type": "string",
+            "description": ""
+          },
+          "displayName": {
+            "type": "string",
+            "description": ""
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": ""
+          },
+          "superAdmin": {
+            "type": "boolean",
+            "description": ""
+          },
+          "passwordChangeRequired": {
+            "type": "boolean",
+            "description": ""
+          },
+          "createdTime": {
+            "type": "string",
+            "description": ""
+          },
+          "updatedTime": {
+            "type": "string",
+            "description": ""
+          }
+        }
+      },
+      "ResponseEntityResultAuthResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AuthResponse",
+            "description": ""
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "tokenType": {
+            "type": "string",
+            "description": ""
+          },
+          "token": {
+            "type": "string",
+            "description": ""
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          },
+          "account": {
+            "$ref": "#/components/schemas/AccountResponse",
+            "description": ""
+          }
+        }
+      },
+      "AuthRequest": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "",
+            "pattern": "^1[3-9]\\d{9}$"
+          },
+          "password": {
+            "type": "string",
+            "description": "",
+            "pattern": "^[\\x21-\\x7E]{8,72}$"
+          },
+          "verificationCode": {
+            "type": "string",
+            "description": "",
+            "pattern": "^[0-9]{6}$"
+          }
+        },
+        "required": [
+          "phone",
+          "password",
+          "verificationCode"
+        ]
+      },
+      "UserInfoResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": ""
+          },
+          "phone": {
+            "type": "string",
+            "description": ""
+          }
+        }
+      },
+      "ResultAuthResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AuthResponse",
+            "description": ""
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "",
+            "pattern": "[a-z][a-z0-9_]{2,49}"
+          },
+          "password": {
+            "type": "string",
+            "description": "",
+            "maxLength": 72
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ]
+      },
+      "ResultUserInfoResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserInfoResponse",
+            "description": ""
+          }
+        }
+      },
+      "VerificationCodeRequest": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "",
+            "pattern": "^1[3-9]\\d{9}$"
+          },
+          "type": {
+            "type": "string",
+            "description": "验证码用途：LOGIN 登录、REGISTER 注册、RESET_PASSWORD 重置密码",
+            "enum": [
+              "LOGIN_REGISTER",
+              "ADMIN_LOGIN",
+              "RESET_PASSWORD"
+            ]
+          }
+        },
+        "required": [
+          "phone",
+          "type"
+        ]
+      },
+      "ResultVoid": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "description": "",
+            "type": "null"
+          }
+        }
+      },
+      "RoleResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          },
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "name": {
+            "type": "string",
+            "description": ""
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": ""
+          },
+          "createdTime": {
+            "type": "string",
+            "description": ""
+          },
+          "updatedTime": {
+            "type": "string",
+            "description": ""
+          }
+        }
+      },
+      "MeResponse": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/AccountResponse",
+            "description": ""
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleResponse",
+              "description": "com.pettown.admin.system.vo.RoleResponse"
+            },
+            "description": ""
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": ""
+          }
+        }
+      },
+      "PetResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string",
+            "description": ""
+          },
+          "species": {
+            "type": "string",
+            "description": ""
+          }
+        }
+      },
+      "PetProfileResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          },
+          "ownerId": {
+            "type": "string",
+            "description": ""
+          },
+          "name": {
+            "type": "string",
+            "description": ""
+          },
+          "species": {
+            "type": "string",
+            "description": ""
+          },
+          "breed": {
+            "type": "string",
+            "description": ""
+          },
+          "gender": {
+            "type": "string",
+            "description": ""
+          },
+          "birthDate": {
+            "type": "string",
+            "description": ""
+          },
+          "weightKg": {
+            "type": "number",
+            "description": ""
+          },
+          "sterilized": {
+            "type": "boolean",
+            "description": ""
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": ""
+          },
+          "createdTime": {
+            "type": "string",
+            "description": ""
+          },
+          "updatedTime": {
+            "type": "string",
+            "description": ""
+          }
+        }
+      },
+      "ResponseEntityResultPetResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PetResponse",
+            "description": ""
+          }
+        }
+      },
+      "PageResultRoleResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleResponse",
+              "description": "com.pettown.admin.system.vo.RoleResponse"
+            },
+            "description": ""
+          },
+          "total": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          }
+        }
+      },
+      "MenuResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "title": {
+            "type": "string",
+            "description": ""
+          },
+          "path": {
+            "type": "string",
+            "description": ""
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MenuResponse",
+              "description": "菜单只是前端导航，接口仍独立校验权限。"
+            },
+            "description": ""
+          }
+        }
+      },
+      "ResponseEntityResultPetProfileResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PetProfileResponse",
+            "description": ""
+          }
+        }
+      },
+      "CreatePetRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": ""
+          },
+          "species": {
+            "type": "string",
+            "description": ""
+          }
+        },
+        "required": [
+          "name",
+          "species"
+        ]
+      },
+      "ResultPageResultRoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultRoleResponse",
+            "description": ""
+          }
+        }
+      },
+      "CreatePetProfileRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "",
+            "maxLength": 30
+          },
+          "species": {
+            "type": "string",
+            "description": "",
+            "enum": [
+              "CAT",
+              "DOG",
+              "OTHER"
+            ]
+          },
+          "breed": {
+            "type": "string",
+            "description": "",
+            "maxLength": 100
+          },
+          "gender": {
+            "type": "string",
+            "description": "",
+            "maxLength": 16
+          },
+          "birthDate": {
+            "type": "string",
+            "description": ""
+          },
+          "weightKg": {
+            "type": "number",
+            "description": "",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "sterilized": {
+            "type": "boolean",
+            "description": ""
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "name",
+          "species"
+        ]
+      },
+      "ResultPetResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PetResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultRoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/RoleResponse",
+            "description": ""
+          }
+        }
+      },
+      "ChangePasswordRequest": {
+        "type": "object",
+        "properties": {
+          "oldPassword": {
+            "type": "string",
+            "description": "",
+            "maxLength": 72
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "",
+            "pattern": "[\\x21-\\x7E]{8,72}"
+          }
+        },
+        "required": [
+          "oldPassword",
+          "newPassword"
+        ]
+      },
+      "PageResultPetProfileResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PetProfileResponse",
+              "description": "com.pettown.miniapp.pet.vo.PetProfileResponse"
+            },
+            "description": ""
+          },
+          "total": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          }
+        }
+      },
+      "ResultListPetResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PetResponse",
+              "description": "com.pettown.app.pet.vo.PetResponse"
+            },
+            "description": ""
+          }
+        }
+      },
+      "PermissionResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "title": {
+            "type": "string",
+            "description": ""
+          }
+        }
+      },
+      "ResultPageResultPetProfileResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultPetProfileResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultPetProfileResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PetProfileResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultListString": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": ""
+          }
+        }
+      },
+      "PetHealthRecordResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          },
+          "petId": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string",
+            "description": ""
+          },
+          "title": {
+            "type": "string",
+            "description": ""
+          },
+          "recordDate": {
+            "type": "string",
+            "description": ""
+          },
+          "notes": {
+            "type": "string",
+            "description": ""
+          },
+          "nextReminderDate": {
+            "type": "string",
+            "description": ""
+          },
+          "createdTime": {
+            "type": "string",
+            "description": ""
+          },
+          "updatedTime": {
+            "type": "string",
+            "description": ""
+          }
+        }
+      },
+      "ResponseEntityResultPetHealthRecordResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PetHealthRecordResponse",
+            "description": ""
+          }
+        }
+      },
+      "CreatePetHealthRecordRequest": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "",
+            "enum": [
+              "VACCINE",
+              "DEWORM",
+              "WEIGHT",
+              "OTHER"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "description": "",
+            "maxLength": 100
+          },
+          "recordDate": {
+            "type": "string",
+            "description": ""
+          },
+          "notes": {
+            "type": "string",
+            "description": "",
+            "maxLength": 2000
+          },
+          "nextReminderDate": {
+            "type": "string",
+            "description": ""
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "recordDate"
+        ]
+      },
+      "PageResultAccountResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountResponse",
+              "description": "com.pettown.admin.system.vo.AccountResponse"
+            },
+            "description": ""
+          },
+          "total": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          }
+        }
+      },
+      "CreateAccountRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "",
+            "pattern": "[a-z][a-z0-9_]{2,49}"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "",
+            "maxLength": 50
+          },
+          "password": {
+            "type": "string",
+            "description": "",
+            "pattern": "[\\x21-\\x7E]{8,72}"
+          }
+        },
+        "required": [
+          "username",
+          "displayName",
+          "password"
+        ]
+      },
+      "PageResultPetHealthRecordResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PetHealthRecordResponse",
+              "description": "com.pettown.miniapp.pet.health.vo.PetHealthRecordResponse"
+            },
+            "description": ""
+          },
+          "total": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          }
+        }
+      },
+      "ResultPageResultAccountResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultAccountResponse",
+            "description": ""
+          }
+        }
+      },
+      "UpdateAccountRequest": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "description": "",
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "displayName"
+        ]
+      },
+      "ResultPageResultPetHealthRecordResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultPetHealthRecordResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultAccountResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AccountResponse",
+            "description": ""
+          }
+        }
+      },
+      "StatusRequest": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": ""
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "AccountRolesRequest": {
+        "type": "object",
+        "properties": {
+          "roleIds": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "",
+            "maxItems": 100
+          }
+        },
+        "required": [
+          "roleIds"
+        ]
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "description": "",
+            "pattern": "[\\x21-\\x7E]{8,72}"
+          }
+        },
+        "required": [
+          "password"
+        ]
+      },
+      "ResultListLong": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": ""
+          }
+        }
+      },
+      "CreateRoleRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "",
+            "pattern": "[a-z][a-z0-9_]{2,49}"
+          },
+          "name": {
+            "type": "string",
+            "description": "",
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
+      "UpdateRoleRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "",
+            "maxLength": 50
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": ""
+          }
+        },
+        "required": [
+          "name",
+          "enabled"
+        ]
+      },
+      "ResultListPermissionResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionResponse",
+              "description": "com.pettown.admin.system.vo.PermissionResponse"
+            },
+            "description": ""
+          }
+        }
+      },
+      "RolePermissionsRequest": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "",
+            "maxItems": 12
+          }
+        },
+        "required": [
+          "permissions"
+        ]
+      },
+      "ResultLoginResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoginResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultMeResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/MeResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultListMenuResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MenuResponse",
+              "description": "菜单只是前端导航，接口仍独立校验权限。"
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "responses": {},
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "servers": [],
+  "security": [
+    {
+      "bearer": []
+    }
+  ]
+}

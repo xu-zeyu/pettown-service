@@ -1,0 +1,5 @@
+【尾巴町 miniapp/admin API 测试状态更正】
+此前通知中的“禅道受阻”已解决：使用禅道官方 API V2 只读核实，项目 ID 1 与产品 ID 1 分别对应“尾巴町”，产品 Bug 列表可读取。
+本轮 Apifox 接口入库回读 miniapp 16/16、admin 64/64；已有 JUnit API 用例 151/151 通过。无已证实缺陷，本轮未创建禅道 Bug。
+真实 HTTP 环境、逐接口覆盖与跨服务链路仍待验证；尚未达到商用验收门禁。禅道当前使用公网 HTTP，后续应改用 HTTPS 或受信任隧道。
+报告：.ai/runs/api-test/2026-11-07-miniapp-admin-skill-fix/测试报告.md

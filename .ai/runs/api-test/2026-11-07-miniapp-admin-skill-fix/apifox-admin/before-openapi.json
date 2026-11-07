@@ -1,0 +1,1477 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "默认模块",
+    "description": "",
+    "version": "1.0.0"
+  },
+  "tags": [],
+  "paths": {},
+  "webhooks": {},
+  "components": {
+    "schemas": {
+      "AccountResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "管理员 ID",
+            "format": "int64"
+          },
+          "username": {
+            "type": "string",
+            "description": "管理员账号"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "显示名"
+          },
+          "roleId": {
+            "type": "integer",
+            "description": "关联角色 ID；一个账号最多关联一个角色，未关联时为 null",
+            "format": "int64"
+          },
+          "phone": {
+            "type": "string",
+            "description": "登录验证码手机号；未配置时无法短信登录"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "是否启用"
+          },
+          "superAdmin": {
+            "type": "boolean",
+            "description": "是否为初始超级管理员"
+          },
+          "passwordChangeRequired": {
+            "type": "boolean",
+            "description": "是否必须先修改密码"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "创建时间"
+          },
+          "updatedTime": {
+            "type": "string",
+            "description": "更新时间"
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "tokenType": {
+            "type": "string",
+            "description": "Token 类型，固定为 Bearer"
+          },
+          "token": {
+            "type": "string",
+            "description": "管理员 Token；通过 Authorization 请求头传递，仅登录时返回"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "当前 Token 剩余有效期，单位：秒",
+            "format": "int64"
+          },
+          "account": {
+            "$ref": "#/components/schemas/AccountResponse",
+            "description": "登录账号信息；passwordChangeRequired 为 true 时必须先修改密码"
+          }
+        }
+      },
+      "VerificationCodeRequest": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "",
+            "pattern": "^1[3-9]\\d{9}$"
+          },
+          "type": {
+            "type": "string",
+            "description": "验证码用途：ADMIN_LOGIN 登录",
+            "enum": [
+              "ADMIN_LOGIN"
+            ]
+          }
+        },
+        "required": [
+          "phone",
+          "type"
+        ]
+      },
+      "ResultLoginResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoginResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultVoid": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "description": "",
+            "type": "null"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "管理员账号",
+            "pattern": "(?:[a-z][a-z0-9_]{2,49}|[A-Za-z0-9]{4,50})"
+          },
+          "password": {
+            "type": "string",
+            "description": "管理员密码",
+            "maxLength": 72
+          },
+          "smsCode": {
+            "type": "string",
+            "description": "管理员登录用途的六位短信验证码",
+            "pattern": "[0-9]{6}"
+          }
+        },
+        "required": [
+          "username",
+          "password",
+          "smsCode"
+        ]
+      },
+      "RoleResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "角色 ID",
+            "format": "int64"
+          },
+          "code": {
+            "type": "string",
+            "description": "唯一角色编码"
+          },
+          "name": {
+            "type": "string",
+            "description": "角色名称"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "是否启用"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "创建时间"
+          },
+          "updatedTime": {
+            "type": "string",
+            "description": "更新时间"
+          }
+        }
+      },
+      "MeResponse": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/AccountResponse",
+            "description": "当前管理员信息"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleResponse",
+              "description": "com.pettown.admin.system.vo.RoleResponse"
+            },
+            "description": "已启用的绑定角色；超级管理员权限不依赖角色"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "当前有效权限编码的并集"
+          }
+        }
+      },
+      "ResultMeResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/MeResponse",
+            "description": ""
+          }
+        }
+      },
+      "MenuResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "菜单编码"
+          },
+          "title": {
+            "type": "string",
+            "description": "菜单标题"
+          },
+          "path": {
+            "type": "string",
+            "description": "前端页面路径；目录节点为 null"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MenuResponse",
+              "description": "菜单只是前端导航，接口仍独立校验权限。"
+            },
+            "description": "子菜单；叶子节点为空数组"
+          }
+        }
+      },
+      "ResultListMenuResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MenuResponse",
+              "description": "菜单只是前端导航，接口仍独立校验权限。"
+            },
+            "description": ""
+          }
+        }
+      },
+      "ChangePasswordRequest": {
+        "type": "object",
+        "properties": {
+          "oldPassword": {
+            "type": "string",
+            "description": "原密码",
+            "maxLength": 72
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "新密码；8 到 72 位非空格 ASCII 字符，不能与原密码相同",
+            "pattern": "[\\x21-\\x7E]{8,72}"
+          }
+        },
+        "required": [
+          "oldPassword",
+          "newPassword"
+        ]
+      },
+      "PermissionResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "权限编码"
+          },
+          "title": {
+            "type": "string",
+            "description": "权限名称"
+          }
+        }
+      },
+      "ResultListPermissionResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionResponse",
+              "description": "com.pettown.admin.system.vo.PermissionResponse"
+            },
+            "description": ""
+          }
+        }
+      },
+      "ResultString": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "string",
+            "description": ""
+          }
+        }
+      },
+      "V1ChangePasswordRequest": {
+        "type": "object",
+        "properties": {
+          "oldPassword": {
+            "type": "string",
+            "description": "原密码"
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "新密码：8 到 64 位非空格 ASCII，至少包含字母和数字，且不能与原密码相同",
+            "pattern": "(?=.*[A-Za-z])(?=.*[0-9])[\\x21-\\x7E]{8,64}"
+          }
+        },
+        "required": [
+          "oldPassword",
+          "newPassword"
+        ]
+      },
+      "PageResultAccountResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountResponse",
+              "description": "com.pettown.admin.system.vo.AccountResponse"
+            },
+            "description": ""
+          },
+          "total": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          }
+        }
+      },
+      "AdminSmsLoginRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "",
+            "maxLength": 50
+          },
+          "password": {
+            "type": "string",
+            "description": "管理员密码",
+            "maxLength": 72
+          },
+          "smsCode": {
+            "type": "string",
+            "description": "管理员登录用途的六位短信验证码",
+            "pattern": "[0-9]{6}"
+          }
+        },
+        "required": [
+          "username",
+          "password",
+          "smsCode"
+        ]
+      },
+      "AdminUserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": ""
+          },
+          "phone": {
+            "type": "string",
+            "description": ""
+          },
+          "source": {
+            "type": "string",
+            "description": "",
+            "enum": [
+              "IOS",
+              "ANDROID",
+              "HARMONY_OS",
+              "MINI_PROGRAM",
+              "WEB",
+              "UNKNOWN"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "description": "",
+            "enum": [
+              "ACTIVE",
+              "BANNED"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": ""
+          }
+        }
+      },
+      "ResultPageResultAccountResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultAccountResponse",
+            "description": ""
+          }
+        }
+      },
+      "AdminSelfResponse": {
+        "type": "object",
+        "properties": {
+          "avatar": {
+            "type": "string",
+            "description": ""
+          },
+          "userName": {
+            "type": "string",
+            "description": ""
+          },
+          "authorities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "当前有效权限编码；前端据此控制菜单及按钮，接口仍独立鉴权"
+          }
+        }
+      },
+      "PageResultAdminUserResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUserResponse",
+              "description": "不暴露密码散列的 C 端用户视图。"
+            },
+            "description": ""
+          },
+          "total": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          }
+        }
+      },
+      "ResultAccountResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AccountResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultAdminSelfResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminSelfResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultPageResultAdminUserResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultAdminUserResponse",
+            "description": ""
+          }
+        }
+      },
+      "CreateAccountRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "唯一账号；3 到 50 位小写字母、数字或下划线，以字母开头，创建后不可修改",
+            "pattern": "[a-z][a-z0-9_]{2,49}"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "显示名；不能为空，最多 50 个字符",
+            "maxLength": 50
+          },
+          "password": {
+            "type": "string",
+            "description": "初始密码；8 到 72 位非空格 ASCII 字符，首次登录须修改",
+            "pattern": "[\\x21-\\x7E]{8,72}"
+          },
+          "phone": {
+            "type": "string",
+            "description": "登录验证码手机号；未配置时无法短信登录",
+            "pattern": "1[3-9][0-9]{9}"
+          }
+        },
+        "required": [
+          "username",
+          "displayName",
+          "password"
+        ]
+      },
+      "AdminRoleResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          },
+          "rname": {
+            "type": "string",
+            "description": "角色名称"
+          },
+          "description": {
+            "type": "string",
+            "description": ""
+          },
+          "updatedTime": {
+            "type": "string",
+            "description": ""
+          },
+          "createdTime": {
+            "type": "string",
+            "description": ""
+          },
+          "deleted": {
+            "type": "integer",
+            "description": "0 为正常，1 为已删除；列表只返回正常角色"
+          }
+        }
+      },
+      "ResultAdminUserResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminUserResponse",
+            "description": ""
+          }
+        }
+      },
+      "UpdateAccountRequest": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "description": "显示名；不能为空，最多 50 个字符",
+            "maxLength": 50
+          },
+          "phone": {
+            "type": "string",
+            "description": "登录验证码手机号；不传时保持原值，修改后该账号全部旧会话失效",
+            "pattern": "1[3-9][0-9]{9}"
+          }
+        },
+        "required": [
+          "displayName"
+        ]
+      },
+      "AdminInfoResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          },
+          "username": {
+            "type": "string",
+            "description": ""
+          },
+          "realName": {
+            "type": "string",
+            "description": ""
+          },
+          "phone": {
+            "type": "string",
+            "description": ""
+          },
+          "avatar": {
+            "type": "string",
+            "description": ""
+          },
+          "createdTime": {
+            "type": "string",
+            "description": ""
+          },
+          "lastLoginTime": {
+            "type": "string",
+            "description": ""
+          },
+          "updatedTime": {
+            "type": "string",
+            "description": ""
+          },
+          "role": {
+            "$ref": "#/components/schemas/AdminRoleResponse",
+            "description": "账号关联的已启用角色；未关联、已禁用或已删除时为 null"
+          }
+        }
+      },
+      "UserStatusRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "ACTIVE 正常；BANNED 永久封禁直到管理员手动解封",
+            "enum": [
+              "ACTIVE",
+              "BANNED"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "StatusRequest": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "是否启用；修改状态会使该账号全部旧会话失效"
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "ResultAdminInfoResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminInfoResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultListLong": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": ""
+          }
+        }
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "description": "重置后的密码；8 到 72 位非空格 ASCII 字符，下次登录须修改",
+            "pattern": "[\\x21-\\x7E]{8,72}"
+          }
+        },
+        "required": [
+          "password"
+        ]
+      },
+      "ResultLong": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          }
+        }
+      },
+      "PageResultRoleResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleResponse",
+              "description": "com.pettown.admin.system.vo.RoleResponse"
+            },
+            "description": ""
+          },
+          "total": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          }
+        }
+      },
+      "AccountRoleRequest": {
+        "type": "object",
+        "properties": {
+          "roleId": {
+            "type": "integer",
+            "description": "角色 ID；一个账号最多关联一个角色，null 或不传时解除关联",
+            "minimum": 1,
+            "format": "int64"
+          }
+        }
+      },
+      "ResultPageResultRoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultRoleResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultRoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/RoleResponse",
+            "description": ""
+          }
+        }
+      },
+      "CreateRoleRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "唯一角色编码；3 到 50 位小写字母、数字或下划线，以字母开头，创建后不可修改",
+            "pattern": "[a-z][a-z0-9_]{2,49}"
+          },
+          "name": {
+            "type": "string",
+            "description": "角色名称；不能为空，最多 50 个字符",
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
+      "UpdateRoleRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "角色名称；不能为空，最多 50 个字符",
+            "maxLength": 50
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "是否启用；禁用后不再提供角色权限"
+          }
+        },
+        "required": [
+          "name",
+          "enabled"
+        ]
+      },
+      "AccountRolesRequest": {
+        "type": "object",
+        "properties": {
+          "roleIds": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "角色 ID 列表；整体替换绑定，空数组清空，重复 ID 自动去重，最多 100 个",
+            "maxItems": 1
+          }
+        },
+        "required": [
+          "roleIds"
+        ]
+      },
+      "ResultListString": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": ""
+          }
+        }
+      },
+      "RolePermissionsRequest": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "权限编码列表；整体替换，空数组清空；仅支持权限目录中的编码，不支持通配符",
+            "maxItems": 1000
+          }
+        },
+        "required": [
+          "permissions"
+        ]
+      },
+      "V1CreateAccountRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "唯一用户名：4 到 50 位 ASCII 字母或数字",
+            "pattern": "[A-Za-z0-9]{4,50}"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "显示名：非空且最多 50 个字符",
+            "maxLength": 50
+          },
+          "password": {
+            "type": "string",
+            "description": "初始密码：8 到 72 位非空格 ASCII，须同时包含字母、数字、符号",
+            "minLength": 8,
+            "maxLength": 72
+          },
+          "phone": {
+            "type": "string",
+            "description": "登录验证码手机号；不传时无法短信登录",
+            "pattern": "1[3-9][0-9]{9}"
+          },
+          "roleId": {
+            "type": "integer",
+            "description": "初始角色 ID；不传时不分配角色",
+            "minimum": 1,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "username",
+          "displayName",
+          "password"
+        ]
+      },
+      "AdminPermissionCreateRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "",
+            "maxLength": 50
+          },
+          "code": {
+            "type": "string",
+            "description": "",
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "name",
+          "code"
+        ]
+      },
+      "V1ResetPasswordRequest": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "description": "新密码：8 到 64 位非空格 ASCII，至少包含字母和数字；下次登录须修改",
+            "pattern": "(?=.*[A-Za-z])(?=.*[0-9])[\\x21-\\x7E]{8,64}"
+          }
+        },
+        "required": [
+          "password"
+        ]
+      },
+      "AdminPermissionUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "",
+            "minimum": 1,
+            "format": "int64"
+          },
+          "name": {
+            "type": "string",
+            "description": "",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "code": {
+            "type": "string",
+            "description": "",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "AdminPermissionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "权限 ID",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string",
+            "description": "权限名称"
+          },
+          "code": {
+            "type": "string",
+            "description": "权限编码"
+          }
+        }
+      },
+      "ResultAdminPermissionResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminPermissionResponse",
+            "description": ""
+          }
+        }
+      },
+      "PageResultAdminPermissionResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPermissionResponse",
+              "description": "com.pettown.admin.system.vo.AdminPermissionResponse"
+            },
+            "description": ""
+          },
+          "total": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          }
+        }
+      },
+      "ResultPageResultAdminPermissionResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultAdminPermissionResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultListAdminPermissionResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPermissionResponse",
+              "description": "com.pettown.admin.system.vo.AdminPermissionResponse"
+            },
+            "description": ""
+          }
+        }
+      },
+      "AdminPermissionSyncRequest": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPermissionCreateRequest",
+              "description": "com.pettown.admin.system.dto.AdminPermissionCreateRequest"
+            },
+            "description": "权限目录；仅新增不存在的编码，已有编码保持原名称，不删除权限",
+            "maxItems": 1000
+          }
+        },
+        "required": [
+          "permissions"
+        ]
+      },
+      "AdminRoleCreateRequest": {
+        "type": "object",
+        "properties": {
+          "rname": {
+            "type": "string",
+            "description": "",
+            "maxLength": 50
+          },
+          "description": {
+            "type": "string",
+            "description": "",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "rname"
+        ]
+      },
+      "AdminRoleUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "",
+            "minimum": 1,
+            "format": "int64"
+          },
+          "rname": {
+            "type": "string",
+            "description": "",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "description": {
+            "type": "string",
+            "description": "",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "V1RoleResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "角色 ID",
+            "format": "int64"
+          },
+          "code": {
+            "type": "string",
+            "description": "唯一角色编码，创建后不可修改"
+          },
+          "name": {
+            "type": "string",
+            "description": "角色名称"
+          },
+          "description": {
+            "type": "string",
+            "description": "角色说明"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "是否启用"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "创建时间"
+          },
+          "updatedTime": {
+            "type": "string",
+            "description": "更新时间"
+          }
+        }
+      },
+      "AdminRoleDeleteRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "",
+            "minimum": 1,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "PageResultV1RoleResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/V1RoleResponse",
+              "description": "com.pettown.admin.system.vo.V1RoleResponse"
+            },
+            "description": ""
+          },
+          "total": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          }
+        }
+      },
+      "ResultAdminRoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminRoleResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultPageResultV1RoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultV1RoleResponse",
+            "description": ""
+          }
+        }
+      },
+      "PageResultAdminRoleResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminRoleResponse",
+              "description": "com.pettown.admin.system.vo.AdminRoleResponse"
+            },
+            "description": ""
+          },
+          "total": {
+            "type": "integer",
+            "description": "",
+            "format": "int64"
+          }
+        }
+      },
+      "ResultV1RoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/V1RoleResponse",
+            "description": ""
+          }
+        }
+      },
+      "ResultPageResultAdminRoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultAdminRoleResponse",
+            "description": ""
+          }
+        }
+      },
+      "V1CreateRoleRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "唯一角色编码，3 到 50 位小写字母、数字或下划线，以字母开头；创建后不可修改",
+            "pattern": "[a-z][a-z0-9_]{2,49}"
+          },
+          "name": {
+            "type": "string",
+            "description": "角色名称，最多 50 个字符",
+            "maxLength": 50
+          },
+          "description": {
+            "type": "string",
+            "description": "角色说明，最多 500 个字符",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
+      "ResultListAdminRoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": ""
+          },
+          "msg": {
+            "type": "string",
+            "description": ""
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminRoleResponse",
+              "description": "com.pettown.admin.system.vo.AdminRoleResponse"
+            },
+            "description": ""
+          }
+        }
+      },
+      "V1UpdateRoleRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "角色名称，最多 50 个字符",
+            "maxLength": 50
+          },
+          "description": {
+            "type": "string",
+            "description": "角色说明；null 清空",
+            "maxLength": 500
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "是否启用；禁用后角色权限对后续请求立即失效"
+          }
+        },
+        "required": [
+          "name",
+          "enabled"
+        ]
+      },
+      "AdminRoleAssignPermissionRequest": {
+        "type": "object",
+        "properties": {
+          "roleId": {
+            "type": "integer",
+            "description": "",
+            "minimum": 1,
+            "format": "int64"
+          },
+          "permissionIds": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "权限 ID 列表；整体替换，空数组清空，重复 ID 去重",
+            "maxItems": 1000
+          }
+        },
+        "required": [
+          "roleId",
+          "permissionIds"
+        ]
+      },
+      "AdminCreateRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "",
+            "pattern": "[a-z][a-z0-9_]{2,49}"
+          },
+          "password": {
+            "type": "string",
+            "description": "8 到 72 位非空格 ASCII 字符",
+            "pattern": "[\\x21-\\x7E]{8,72}"
+          },
+          "phone": {
+            "type": "string",
+            "description": "登录验证码使用的手机号",
+            "pattern": "1[3-9][0-9]{9}"
+          },
+          "realName": {
+            "type": "string",
+            "description": "",
+            "maxLength": 50
+          },
+          "roleId": {
+            "type": "integer",
+            "description": "初始角色 ID；不传时不分配角色",
+            "minimum": 1,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ]
+      }
+    },
+    "responses": {},
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "servers": [],
+  "security": [
+    {
+      "bearer": []
+    }
+  ]
+}

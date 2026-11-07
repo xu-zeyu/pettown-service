@@ -2,6 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import apifox_sync
 
@@ -43,6 +44,24 @@ class ApifoxSyncTests(unittest.TestCase):
         self.assertIsInstance(payload["input"], str)
         self.assertEqual(json.loads(payload["input"]), SPEC)
         self.assertEqual(payload["options"], {"targetEndpointFolderId": 42})
+
+    def test_curl_transport_keeps_token_out_of_process_arguments(self):
+        request = apifox_sync.urllib.request.Request(
+            "https://api.apifox.com/v1/projects/123/export-openapi",
+            data=b'{}', headers={"Authorization": "Bearer sample-secret"}, method="POST")
+
+        def fake_curl(command, **_kwargs):
+            self.assertNotIn("sample-secret", " ".join(command))
+            header_path = Path(command[command.index("--header") + 1][1:])
+            self.assertIn("sample-secret", header_path.read_text())
+            self.assertEqual(header_path.stat().st_mode & 0o777, 0o600)
+            Path(command[command.index("--output") + 1]).write_bytes(b'{"openapi":"3.1.0"}')
+            return mock.Mock(returncode=0, stdout="200\napplication/json")
+
+        with mock.patch.object(apifox_sync.subprocess, "run", side_effect=fake_curl):
+            with apifox_sync.curl_urlopen(request, 5) as response:
+                self.assertEqual(response.status, 200)
+                self.assertEqual(response.headers["Content-Type"], "application/json")
 
     def test_empty_project_imports_once_and_verifies_export(self):
         calls = []

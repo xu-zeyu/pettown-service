@@ -8,4 +8,4 @@ startup_timeout_sec = 30
 TAPD_API_BASE_URL = "https://api.tapd.cn"
 TAPD_BASE_URL = "https://www.tapd.cn"
 # 企业微信群机器人
-BOT_URL = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=5f7fd2c4-167d-4b68-aed4-bdbd3abbbd3e"
+# 企业微信通知使用已忽略的 .ai/skills/tapd-requirement-intake/.env

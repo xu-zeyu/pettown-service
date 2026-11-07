@@ -4,6 +4,9 @@
   "source_spec": "/Users/xuzeyu/Documents/company/jinHan/pettown-server/.ai/runs/api-test/2026-11-07-miniapp-admin-skill-fix/miniapp-openapi.json",
   "source_sha256": "cf8641de3fa3dde4e8dc19738cf327a65233045d16bfd5c77e542e2713013d3b",
   "expected_operations": 16,
-  "verified": false,
-  "import_attempted": false
+  "verified": true,
+  "import_attempted": true,
+  "missing_operations": [],
+  "observed_operations": 16,
+  "evidence": "/Users/xuzeyu/Documents/company/jinHan/pettown-server/.ai/runs/api-test/2026-11-07-miniapp-admin-skill-fix/apifox-miniapp/after-openapi.json"
 }

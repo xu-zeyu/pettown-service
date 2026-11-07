@@ -1,5 +1,5 @@
 {
-  "http_status": 201,
-  "content_type": "text/html",
-  "body_bytes": 0
+  "http_status": 200,
+  "content_type": "application/json",
+  "body_bytes": 26693
 }

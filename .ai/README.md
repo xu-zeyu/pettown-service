@@ -19,6 +19,7 @@
 - `skills/tapd-requirement-intake`：需求评分、TAPD 入库回读与企业微信通知。
 - `skills/tapd-version-delivery`：版本 TAPD 清单、P 级排序、逐项分支开发与审查自测合并、开始/完成通知。
 - `skills/api-regression-testing`：模块接口自动化测试闭环（接口识别、Apifox 导入回读、红绿对抗用例、禅道 Bug 入库、运行报告）。
+- `agents/禅道Agent.md`、`skills/zentao-bug-intake`：使用禅道官方 API V2 核实产品、查重、创建 Bug 并回读；凭证与 Apifox 分开配置。
 - `skills/wecom-notification`：研发、需求、UI、测试共用的企业微信群目标核实、发送与回执规则。
 - `skills/ardot-ui-delivery`：UI 排重台账、Ardot 入项回读与企业微信通知。
 - `runs`：需求执行过程中的产物与证据。

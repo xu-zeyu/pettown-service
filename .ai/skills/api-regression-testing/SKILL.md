@@ -1,11 +1,11 @@
 ---
 name: api-regression-testing
-description: 对单项目或多关联项目做接口级自动化测试：逐目标导入并回读 Apifox、执行红绿与对抗用例、通过禅道 MCP 入库可复现 Bug，最后通知企业微信。
+description: 对单项目或多关联项目做接口级自动化测试：逐目标导入并回读 Apifox、执行红绿与对抗用例、交禅道 Agent 用官方 API V2 入库可复现 Bug，最后通知企业微信。
 ---
 
 # API 模块自动化测试
 
-用户说"进行 <模块> 的全量测试""跑一下 <模块> 接口测试"等，且路由判定为后端 HTTP 接口模块时，执行本闭环。用户已明确要求本流程对可复现的真实缺陷通过禅道 MCP 入库并通知企业微信；测试任务授权仓库读取、Apifox 接口导入与回读、非生产环境用例编写执行、禅道 Bug 创建回读、已确认目标的通知。不授权修改项目业务源码、创建 TAPD 缺陷、变更数据库或生产环境操作。TAPD 事项仍按 `../../core/人工审批规范.md`。
+用户说"进行 <模块> 的全量测试""跑一下 <模块> 接口测试"等，且路由判定为后端 HTTP 接口模块时，执行本闭环。用户已明确要求本流程对可复现的真实缺陷通过禅道 Agent 的官方 API V2 入库并通知企业微信；测试任务授权仓库读取、Apifox 接口导入与回读、非生产环境用例编写执行、禅道 Bug 创建回读、已确认目标的通知。不授权修改项目业务源码、创建 TAPD 缺陷、变更数据库或生产环境操作。TAPD 事项仍按 `../../core/人工审批规范.md`。
 
 执行前先读取 `../../core/运行原则.md`、`../../core/人工审批规范.md`、`../../agents/测试Agent.md`、`../../workflows/07-模块自动化测试.md`、当前项目配置（`../../config/projects.yaml` → `../../projects/<项目>.yaml`）及 `../../project-knowledge/<项目>/modules.md`。多项目时，在用户明确的跨项目范围内分别核实各项目配置、仓库和模块地图；不能读取的项目列为受阻。
 
@@ -22,7 +22,7 @@ description: 对单项目或多关联项目做接口级自动化测试：逐目�
 
 1. 凭证从本 skill 同目录 `.env` 读取（见 `.env.example`）：`APIFOX_ACCESS_TOKEN`；`APIFOX_PROJECT_IDS_JSON` 记录 `<稳定项目 ID>/<服务名> → Apifox 项目 ID`，单服务兼容 `APIFOX_PROJECT_ID`。逐目标向用户确认映射，已有配置也须核对；不使用 TAPD、禅道或其他服务的 ID 代替。`.env` 不打印、不提交、不复制进报告。
 2. 先取得当前代码的完整 Springdoc OpenAPI 3 文档，逐项比对 Controller 的方法与路径。启动临时实例提取文档时使用隔离的测试配置和空闲端口，核对实际进程，避免读到 IDE 中旧服务的文档。服务器地址写入已确认的非生产测试地址，不把临时端口写成最终测试目标。
-3. 用 `python3 .ai/skills/api-regression-testing/scripts/apifox_sync.py --target-key <项目/服务> --spec <openapi.json> --out-dir <证据目录>` 执行。脚本先只读调用官方 `export-openapi` 确认目标可读；缺少接口时调用一次 `POST /v1/projects/{projectId}/import-openapi`，`input` 为**完整 OpenAPI JSON 字符串**，不是 `{type,data}`；目录选项名称是 `targetEndpointFolderId`，不是 `targetFolderId`。目标已有全部预期接口时只回读不写；仅有部分预期接口时先核对覆盖策略与重复项，脚本禁止盲目混合导入。首次导入后再次 `export-openapi`，比较全部预期方法与路径。官方契约见 [导入](https://apifox-openapi.apifox.cn/api-173409873)、[导出](https://apifox-openapi.apifox.cn/api-173411997)。
+3. 用 `python3 .ai/skills/api-regression-testing/scripts/apifox_sync.py --target-key <项目/服务> --spec <openapi.json> --out-dir <证据目录>` 执行。脚本以 `curl` 传输，令牌只放在自动清理的受限临时请求头文件，不进入命令参数；本机 Python `urllib` 曾从 Apifox 网关收到空 HTML 201，不能作为结果。脚本先只读调用官方 `export-openapi` 确认目标可读；缺少接口时调用一次 `POST /v1/projects/{projectId}/import-openapi`，`input` 为**完整 OpenAPI JSON 字符串**，不是 `{type,data}`；目录选项名称是 `targetEndpointFolderId`，不是 `targetFolderId`。目标已有全部预期接口时只回读不写；仅有部分预期接口时先核对覆盖策略与重复项，脚本禁止盲目混合导入。首次导入后再次 `export-openapi`，比较全部预期方法与路径。官方契约见 [导入](https://apifox-openapi.apifox.cn/api-173409873)、[导出](https://apifox-openapi.apifox.cn/api-173411997)。
 4. 导出读回必须是 HTTP 200、非空 JSON、含 OpenAPI 3 `paths`；HTTP 201、空 HTML、超时或代理应答都不是入库成功。只在回读覆盖全部预期接口且项目映射正确时将 receipt 标记 `verified: true`。配置目录时还须用 Apifox `endpoint list/get` 或 UI 核对目录及重复项，脚本不会仅凭导出文件判定目录正确。导入响应不明只做只读核查，不自动重导。
 5. 开放 API 不可用时，保存 OpenAPI、请求元数据和空响应证据；若 Apifox CLI 可用，按其当前 `import`、`endpoint list/get` 契约走官方 CLI，并同样回读。否则提供人工文件导入指引，导入后仍须回读。**全部目标核对成功之前停止用例编写和执行**，不得用本地 HTTP 测试代替上传。
 
@@ -45,10 +45,10 @@ description: 对单项目或多关联项目做接口级自动化测试：逐目�
 ## 5. 禅道 Bug 入库（开源版 22.7）
 
 1. 仅将**实际执行、可稳定复现、与已确认契约不符**的缺陷入库；环境故障、未确认规则、仅凭静态猜测的现象只写报告，不创建 Bug。同一根因的失败合并为一条，保留全部受影响接口和用例证据。不要为了凑覆盖率制造 Bug。
-2. 先读取本目录 `.env` 的 `ZENTAO_PRODUCT_IDS_JSON`（或项目配置的 `zentao.product_id`），向用户核实稳定项目/服务到禅道**产品 ID** 的映射；禅道项目 ID、执行 ID、TAPD ID 和 Apifox ID 都不能代替 `productId`。`get_projects` 只列项目，不证明产品归属。无可核实产品 ID 时把缺陷列为“待入库”，请求用户给出产品 ID，不向相似名称产品写入。可选执行 ID、影响版本、指派人也只使用已确认值。
-3. 使用已连接的 `zentao` MCP：先在可用的只读能力和本次台账中按产品、标题、失败签名查重；若连接器无法完整搜索产品 Bug，记录查重范围，必要时在禅道 UI 核对。调用 `create_bug(productId, title, steps, severity, pri, type, openedBuild...)`；`steps` 写明环境、基线提交、前置数据、请求与脱敏响应、期望/实际、复现次数及报告证据路径。不得放入令牌、密码或个人信息。
-4. 创建后立即用 `get_bug_detail(bugId)` 回读产品 ID、标题、重现步骤和状态；仅回读一致才标为“已入库”并引用真实 Bug ID。响应超时或 ID 不明时只读核查，不盲目重建。禅道 22.7 的 API 行为以当前 MCP 实际工具契约和回读为准，不自行拼接未验证的 REST API 路径。不能使用 MCP 时标记入库受阻。
-5. 已入库 Bug 先写报告，再按 `../wecom-notification/SKILL.md` 发企业微信缺陷通知。通知只包含真实 Bug ID、标题、严重级别、简短影响和报告路径；回读失败或待入库时不能宣称已入库。Bug 后续解决、关闭、指派变更不在本测试指令授权范围内。
+2. 读取 `../../agents/禅道Agent.md` 与 `../zentao-bug-intake/SKILL.md`。禅道 Agent 的 `.env` 独立保存 API V2 Token 或登录账号密码及目标产品线索；本 skill 的 `.env` 只放 Apifox 与被测环境配置。产品 ID、项目 ID、Apifox ID 不可混用。
+3. 先由禅道 Agent 通过官方 API 只读核实实例、项目、唯一产品和产品 ID，再按产品 Bug 列表与失败签名查重。产品不明或凭证/通道受阻时，缺陷列为“待入库”，不猜 ID、不换用其他实例。
+4. 每条真实缺陷准备含脱敏步骤与证据路径的 Bug 草稿，交禅道 Agent 执行创建一次、详情回读和不确定响应的只读核查。只有回执 `verified: true` 才标为“已入库”并引用真实 Bug ID；超时不重复创建。无需 Bug 时不发起创建。
+5. 已入库 Bug 由禅道 Agent 先写报告，再按 `../wecom-notification/SKILL.md` 发企业微信缺陷通知并交回回执。通知只包含真实 Bug ID、标题、严重级别、简短影响和报告路径；回读失败或待入库时不能宣称已入库。Bug 后续解决、关闭、指派变更不在本测试指令授权范围内。
 
 ## 6. 报告与通知
 
