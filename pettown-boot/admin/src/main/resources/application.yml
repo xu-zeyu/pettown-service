@@ -23,6 +23,9 @@ pettown:
       username: ${PETTOWN_ADMIN_BOOTSTRAP_USERNAME:}
       password: ${PETTOWN_ADMIN_BOOTSTRAP_PASSWORD:}
       phone: ${PETTOWN_ADMIN_BOOTSTRAP_PHONE:}
+    captcha:
+      # 仅填写会覆盖 X-Real-IP 的可信反向代理直连地址；留空时始终使用 TCP 来源地址。
+      trusted-proxy-ips: ${PETTOWN_ADMIN_CAPTCHA_TRUSTED_PROXY_IPS:}
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
@@ -64,4 +67,5 @@ springdoc:
     - /api/admin/users
     - /api/admin/users/{id}
     - /api/admin/users/{id}/status
+    - /api/admin/verification/captcha
   default-flat-param-object: true
