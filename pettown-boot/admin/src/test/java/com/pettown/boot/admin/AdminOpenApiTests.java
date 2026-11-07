@@ -38,7 +38,7 @@ class AdminOpenApiTests {
         int operations = 0;
         for (var entry : paths.properties()) {
             assertThat(entry.getKey().startsWith("/mng/")
-                    || Set.of("/api/admin/auth/me", "/api/admin/auth/menus", "/api/admin/auth/change-password",
+                    || Set.of("/api/admin/auth/login", "/api/admin/auth/me", "/api/admin/auth/menus", "/api/admin/auth/change-password",
                             "/api/admin/system/accounts", "/api/admin/system/accounts/{id}",
                             "/api/admin/system/accounts/{id}/status", "/api/admin/system/accounts/{id}/reset-password",
                             "/api/admin/system/roles", "/api/admin/system/roles/{id}",
@@ -51,7 +51,7 @@ class AdminOpenApiTests {
                 operations++;
             }
         }
-        assertThat(operations).isEqualTo(57);
+        assertThat(operations).isEqualTo(58);
         assertThat(paths.path("/mng/create").path("post").path("description").asText()).contains("SHA-256");
         assertThat(paths.path("/mng/permission/batchSync").path("post").path("description").asText()).contains("SUB_ADMIN", "事务");
         assertThat(paths.path("/mng/auth/login").path("post").path("security").size()).isZero();
@@ -59,6 +59,7 @@ class AdminOpenApiTests {
         assertThat(verification.path("security").size()).isZero();
         assertThat(verification.path("description").asText()).contains("只接受 ADMIN_LOGIN");
         assertThat(paths.path("/api/admin/verification/captcha").path("get").path("security").size()).isZero();
+        assertThat(paths.path("/api/admin/auth/login").path("post").path("security").size()).isZero();
         assertThat(paths.path("/mng/system/accounts").path("get").path("security").get(0).has("bearerAuth")).isTrue();
         for (String path : Set.of("/api/admin/auth/me", "/api/admin/auth/menus")) {
             assertThat(paths.path(path).path("get").path("security").get(0).has("bearerAuth")).isTrue();
